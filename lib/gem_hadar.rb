@@ -83,6 +83,8 @@ class GemHadar
 
   dsl_accessor :path_name do name end
 
+  dsl_accessor :path_module do name.camelize end
+
   dsl_accessor :version do
     begin
       File.read('VERSION').chomp
@@ -192,8 +194,8 @@ class GemHadar
       mkdir_p dir = File.join('lib', path_name)
       File.write(File.join(dir, 'version.rb')) do |v|
         v.puts <<EOT
-#{module_type} #{path_name.camelize}
-  # #{path_name.camelize} version
+#{module_type} #{path_module}
+  # #{path_module} version
   VERSION         = '#{version}'
   VERSION_ARRAY   = VERSION.split(/\\./).map { |x| x.to_i } # :nodoc:
   VERSION_MAJOR   = VERSION_ARRAY[0] # :nodoc:

@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Florian Frank"]
-  s.date = %q{2011-07-15}
+  s.date = %q{2011-07-16}
   s.description = %q{This library contains some useful functionality to support the development of Ruby Gems}
   s.email = %q{flori@ping.de}
   s.extra_rdoc_files = ["README.rdoc"]

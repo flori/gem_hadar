@@ -2,15 +2,22 @@
 require 'rubygems'
 require 'spruz/xt'
 require 'rbconfig'
-include Config
+if defined?(::Config)
+  include ::Config
+else
+  include ::RbConfig
+end
 require 'rake'
 begin
   require 'rubygems/package_task'
 rescue LoadError
 end
+begin
+  require 'rcov/rcovtask'
+rescue LoadError
+end
 require 'rake/clean'
 require 'rake/testtask'
-require 'rcov/rcovtask'
 require 'dslkit/polite'
 require 'set'
 require 'gem_hadar/version'
@@ -20,7 +27,11 @@ def GemHadar(&block)
 end
 
 class GemHadar
-  include Config
+  if defined?(::Config)
+    include ::Config
+  else
+    include ::RbConfig
+  end
   include Rake::DSL
   extend DSLKit::DSLAccessor
 
@@ -278,7 +289,8 @@ EOT
 
   def test_task
     tt =  Rake::TestTask.new(:run_tests) do |t|
-      t.libs << test_dir << require_paths
+      t.libs << test_dir
+      t.libs.concat require_paths.to_a
       t.test_files = test_files
       t.verbose    = true
     end
@@ -287,19 +299,27 @@ EOT
   end
 
   def rcov_task
-    rt = Rcov::RcovTask.new(:run_rcov) do |t|
-      t.libs << test_dir << require_paths
-      t.test_files = test_files
-      t.verbose    = true
-      t.rcov_opts  = %W[-x '\\b#{test_dir}\/' -x '\\bgems\/']
+    if defined?(::Rcov)
+      rt = ::Rcov::RcovTask.new(:run_rcov) do |t|
+        t.libs << test_dir
+        t.libs.concat require_paths.to_a
+        t.test_files = test_files
+        t.verbose    = true
+        t.rcov_opts  = %W[-x '\\b#{test_dir}\/' -x '\\bgems\/']
+      end
+      desc 'Run the rcov code coverage tests'
+      task :rcov => [ (:compile if extensions.full?), rt.name ].compact
+    else
+      desc 'Run the rcov code coverage tests'
+      task :rcov => [ (:compile if extensions.full?) ].compact do
+        warn "rcov doesn't work for some reason"
+      end
     end
-    desc 'Run the rcov code coverage tests'
-    task :rcov => [ (:compile if extensions.full?), rt.name ].compact
   end
 
   def write_ignore_file 
     File.write('.gitignore') do |output|
-      output.puts *ignore
+      output.puts(*ignore)
     end
   end
 

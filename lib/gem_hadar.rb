@@ -77,6 +77,10 @@ class GemHadar
     end
   end
 
+  dsl_accessor :doc_files do
+    FileList[File.join('lib/**/*.rb')] + FileList[File.join('ext/**/*.c')]
+  end
+
   dsl_accessor :files do
     `git ls-files`.split("\n")
   end
@@ -242,7 +246,7 @@ EOT
       else
         cmd << " --title '#{name.camelize} - #{summary}'"
       end
-      cmd << ' ' << Dir['lib/**/*.rb'] * ' '
+      cmd << ' ' << doc_files * ' '
       if readme
         cmd << " #{readme}"
       end

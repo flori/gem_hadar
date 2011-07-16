@@ -2,10 +2,10 @@
 require 'rubygems'
 require 'spruz/xt'
 require 'rbconfig'
-if defined?(::Config)
-  include ::Config
-else
+if defined?(::RbConfig)
   include ::RbConfig
+else
+  include ::Config
 end
 require 'rake'
 begin
@@ -27,13 +27,14 @@ def GemHadar(&block)
 end
 
 class GemHadar
-  if defined?(::Config)
-    include ::Config
-  else
+  if defined?(::RbConfig)
     include ::RbConfig
+  else
+    include ::Config
   end
   include Rake::DSL
   extend DSLKit::DSLAccessor
+  include Spruz::Write
 
   def initialize(&block)
     @dependencies = []
@@ -229,7 +230,7 @@ class GemHadar
     task :version do
       puts m
       mkdir_p dir = File.join('lib', path_name)
-      File.write(File.join(dir, 'version.rb')) do |v|
+      write(File.join(dir, 'version.rb')) do |v|
         v.puts <<EOT
 #{module_type} #{path_module}
   # #{path_module} version
@@ -249,7 +250,7 @@ EOT
     task :gemspec => :version do
       filename = "#{name}.gemspec"
       warn "Writing to #{filename.inspect} for #{version}"
-      File.open(filename, 'w') do |output|
+      write(filename) do |output|
         output.write gemspec.to_ruby
       end
     end
@@ -318,13 +319,13 @@ EOT
   end
 
   def write_ignore_file 
-    File.write('.gitignore') do |output|
+    write('.gitignore') do |output|
       output.puts(*ignore)
     end
   end
 
   def write_gemfile
-    File.write('Gemfile') do |output|
+    write('Gemfile') do |output|
       output.puts <<EOT
 # vim: set filetype=ruby et sw=2 ts=2:
 

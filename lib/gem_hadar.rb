@@ -12,6 +12,7 @@ require 'rake/clean'
 require 'rake/testtask'
 require 'rcov/rcovtask'
 require 'dslkit/polite'
+require 'set'
 require 'gem_hadar/version'
 
 def GemHadar(&block)
@@ -59,15 +60,27 @@ class GemHadar
     has_to_be_set :description
   end
 
-  dsl_accessor :require_path, 'lib'
+  dsl_accessor :require_paths do Set['lib'] end
+
+  def require_path(path = nil)
+    if path
+      self.require_paths = Set[path]
+    else
+      require_paths.first
+    end
+  end
 
   dsl_accessor :readme
 
   dsl_accessor :title
 
-  dsl_accessor :ignore_files do @ignore_files = [] end
+  dsl_accessor :ignore_files do Set[] end
 
   dsl_accessor :test_dir
+
+  dsl_accessor :bindir
+
+  dsl_accessor :executables do Set[] end
 
   dsl_accessor :test_files do
     if test_dir
@@ -79,6 +92,12 @@ class GemHadar
 
   dsl_accessor :doc_files do
     FileList[File.join('lib/**/*.rb')] + FileList[File.join('ext/**/*.c')]
+  end
+
+  dsl_accessor :extensions do FileList['ext/**/extconf.rb'] end
+
+  dsl_accessor :make do
+    ENV['MAKE'] || %w[gmake make].find { |c| system(c, '-v') }
   end
 
   dsl_accessor :files do
@@ -114,7 +133,7 @@ class GemHadar
   def install_library(&block)
     @install_library_block = lambda do
       desc 'Install executable/library into site_ruby directories'
-      task :install, &block
+      task :install => :prepare_install, &block
     end
   end
 
@@ -138,7 +157,7 @@ class GemHadar
     if args.empty?
       ignore_files
     else
-      ignore_files.push(*args)
+      args.each { |a| ignore_files << a }
     end
   end
 
@@ -167,6 +186,9 @@ class GemHadar
       s.description = description
       s.files       = files
       s.test_files  = test_files
+      extensions.full? { |e| s.extensions = e }
+      bindir.full? { |b| s.bindir = b }
+      executables.full?(:to_a) { |e| s.executables = e }
 
       s.add_development_dependency('gem_hadar', "~>#{VERSION}")
       for d in @development_dependencies
@@ -176,7 +198,7 @@ class GemHadar
         s.add_dependency(*d)
       end
 
-      s.require_path = require_path
+      s.require_paths = require_paths.to_a
 
       if title
         s.rdoc_options << '--title' << title
@@ -187,7 +209,7 @@ class GemHadar
         s.rdoc_options << '--main' << readme
         s.extra_rdoc_files << readme
       end
-
+      s.extra_rdoc_files.concat doc_files
     end
   end
 
@@ -255,25 +277,29 @@ EOT
   end
 
   def test_task
-    Rake::TestTask.new do |t|
-      t.libs << test_dir
+    tt =  Rake::TestTask.new(:run_tests) do |t|
+      t.libs << test_dir << require_paths
       t.test_files = test_files
       t.verbose    = true
     end
+    desc 'Run the tests'
+    task :test => [ (:compile if extensions.full?), tt.name ].compact
   end
 
   def rcov_task
-    Rcov::RcovTask.new do |t|
-      t.libs << test_dir
+    rt = Rcov::RcovTask.new(:run_rcov) do |t|
+      t.libs << test_dir << require_paths
       t.test_files = test_files
       t.verbose    = true
       t.rcov_opts  = %W[-x '\\b#{test_dir}\/' -x '\\bgems\/']
     end
+    desc 'Run the rcov code coverage tests'
+    task :rcov => [ (:compile if extensions.full?), rt.name ].compact
   end
 
   def write_ignore_file 
     File.write('.gitignore') do |output|
-      output.puts ignore
+      output.puts *ignore
     end
   end
 
@@ -303,6 +329,23 @@ EOT
     end
   end
 
+  def compile_task
+    for file in extensions
+      dir = File.dirname(file)
+      clean File.join(dir, 'Makefile'), File.join(dir, '*.{bundle,o,so}')
+    end
+    desc "Compile extensions: #{extensions * ', '}"
+    task :compile do
+      for file in extensions
+        dir, file = File.split(file)
+        cd dir do
+          ruby file
+          sh make
+        end
+      end
+    end
+  end
+
   def create_all_tasks
     default_task
     build_task
@@ -319,6 +362,12 @@ EOT
     version_tag_task
     write_ignore_file
     write_gemfile
+    if extensions.full?
+      compile_task
+      task :prepare_install => :compile
+    else
+      task :prepare_install
+    end
     self
   end
 end

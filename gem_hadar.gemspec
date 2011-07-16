@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.date = %q{2011-07-16}
   s.description = %q{This library contains some useful functionality to support the development of Ruby Gems}
   s.email = %q{flori@ping.de}
-  s.extra_rdoc_files = ["README.rdoc"]
+  s.extra_rdoc_files = ["README.rdoc", "lib/gem_hadar.rb", "lib/gem_hadar/version.rb"]
   s.files = [".gitignore", "Gemfile", "LICENSE", "README.rdoc", "Rakefile", "VERSION", "gem_hadar.gemspec", "lib/gem_hadar.rb", "lib/gem_hadar/version.rb"]
   s.homepage = %q{http://github.com/flori/gem_hadar}
   s.rdoc_options = ["--title", "GemHadar - Library for the development of Ruby Gems", "--main", "README.rdoc"]

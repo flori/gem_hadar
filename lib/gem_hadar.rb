@@ -118,7 +118,7 @@ class GemHadar
 
   dsl_accessor :path_name do name end
 
-  dsl_accessor :path_module do name.camelize end
+  dsl_accessor :path_module do path_name.camelize end
 
   dsl_accessor :version do
     begin

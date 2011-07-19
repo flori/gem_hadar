@@ -320,7 +320,7 @@ EOT
 
   def write_ignore_file 
     write('.gitignore') do |output|
-      output.puts(*ignore)
+      output.puts(*ignore.sort)
     end
   end
 

@@ -200,7 +200,7 @@ class GemHadar
       s.test_files  = test_files
       extensions.full? { |e| s.extensions = e }
       bindir.full? { |b| s.bindir = b }
-      executables.full?(:to_a) { |e| s.executables << e }
+      executables.full?(:to_a) { |e| s.executables = e }
 
       s.add_development_dependency('gem_hadar', "~>#{VERSION}")
       for d in @development_dependencies

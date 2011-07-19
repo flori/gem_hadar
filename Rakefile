@@ -14,7 +14,7 @@ GemHadar do
   readme      'README.rdoc'
 
   dependency  'spruz',  '~>0.2.10'
-  dependency  'dslkit', '~>0.2.6'
+  dependency  'dslkit', '~>0.2.7'
   dependency  'sdoc',   '~>0.2.20'
   #dependency  'rcov',   '~>0.9.9' # Doesn't work on all platforms
   dependency  'rake',   '~>0.9.2'

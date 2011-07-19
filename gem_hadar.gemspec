@@ -2,19 +2,19 @@
 
 Gem::Specification.new do |s|
   s.name = %q{gem_hadar}
-  s.version = "0.0.6"
+  s.version = "0.0.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Florian Frank"]
-  s.date = %q{2011-07-18}
+  s.authors = [%q{Florian Frank}]
+  s.date = %q{2011-07-19}
   s.description = %q{This library contains some useful functionality to support the development of Ruby Gems}
   s.email = %q{flori@ping.de}
-  s.extra_rdoc_files = ["README.rdoc", "lib/gem_hadar/version.rb", "lib/gem_hadar.rb"]
-  s.files = [".gitignore", "Gemfile", "LICENSE", "README.rdoc", "Rakefile", "VERSION", "gem_hadar.gemspec", "lib/gem_hadar.rb", "lib/gem_hadar/version.rb"]
+  s.extra_rdoc_files = [%q{README.rdoc}, %q{lib/gem_hadar.rb}, %q{lib/gem_hadar/version.rb}]
+  s.files = [%q{.gitignore}, %q{Gemfile}, %q{LICENSE}, %q{README.rdoc}, %q{Rakefile}, %q{VERSION}, %q{gem_hadar.gemspec}, %q{lib/gem_hadar.rb}, %q{lib/gem_hadar/version.rb}]
   s.homepage = %q{http://github.com/flori/gem_hadar}
-  s.rdoc_options = ["--title", "GemHadar - Library for the development of Ruby Gems", "--main", "README.rdoc"]
-  s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.7.2}
+  s.rdoc_options = [%q{--title}, %q{GemHadar - Library for the development of Ruby Gems}, %q{--main}, %q{README.rdoc}]
+  s.require_paths = [%q{lib}]
+  s.rubygems_version = %q{1.8.5}
   s.summary = %q{Library for the development of Ruby Gems}
 
   if s.respond_to? :specification_version then

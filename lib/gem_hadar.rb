@@ -128,6 +128,29 @@ class GemHadar
     end
   end
 
+  class RvmConfig
+    extend DSLKit::DSLAccessor
+    include DSLKit::BlockSelf
+
+    def initialize(&block)
+      @outer_scope = block_self(&block)
+      instance_eval(&block)
+    end
+
+    dsl_accessor :use do `rvm tools strings`.split(/\n/).full?(:last) || 'ruby' end
+
+    dsl_accessor :gemset do @outer_scope.name end
+  end
+
+  def rvm(&block)
+    if block
+      @rvm = RvmConfig.new(&block)
+    elsif !@rvm
+      @rvm = RvmConfig.new { }
+    end
+    @rvm
+  end
+
   dsl_accessor :default_task_dependencies, [ :gemspec, :test ]
 
   def default_task
@@ -190,7 +213,7 @@ class GemHadar
   def gemspec
     Gem::Specification.new do |s|
       s.name        = name
-      s.version     = version
+      s.version     = ::Gem::Version.new(version)
       s.author      = author
       s.email       = email
       s.homepage    = homepage
@@ -367,9 +390,23 @@ EOT
     end
   end
 
+  def rvm_task
+    desc 'Create .rvmrc file'
+    task :rvm do
+      write('.rvmrc') do |output|
+        output.write <<EOT
+rvm use #{rvm.use}
+rvm gemset create #{rvm.gemset}
+rvm gemset use #{rvm.gemset}
+EOT
+      end
+    end
+  end
+
   def create_all_tasks
     default_task
     build_task
+    rvm_task
     version_task
     gemspec_task
     gems_install_task

@@ -1,6 +1,7 @@
 
 require 'rubygems'
 require 'spruz/xt'
+require 'spruz/secure_write'
 require 'rbconfig'
 if defined?(::RbConfig)
   include ::RbConfig
@@ -273,7 +274,7 @@ EOT
     task :gemspec => :version do
       filename = "#{name}.gemspec"
       warn "Writing to #{filename.inspect} for #{version}"
-      seecure_write(filename, gemspec.to_ruby)
+      secure_write(filename, gemspec.to_ruby)
     end
   end
 

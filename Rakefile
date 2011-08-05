@@ -13,7 +13,7 @@ GemHadar do
   ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock'
   readme      'README.rdoc'
 
-  dependency  'spruz',  '~>0.2'
+  dependency  'spruz',  '~>0.2.12'
   dependency  'dslkit', '~>0.2'
   dependency  'sdoc',   '~>0.2.20'
   #dependency  'rcov',   '~>0.9.9' # Doesn't work on all platforms

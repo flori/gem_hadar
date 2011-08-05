@@ -34,7 +34,7 @@ class GemHadar
   end
   include Rake::DSL
   extend DSLKit::DSLAccessor
-  include Spruz::Write
+  include Spruz::SecureWrite
 
   def initialize(&block)
     @dependencies = []
@@ -253,7 +253,7 @@ class GemHadar
     task :version do
       puts m
       mkdir_p dir = File.join('lib', path_name)
-      write(File.join(dir, 'version.rb')) do |v|
+      secure_write(File.join(dir, 'version.rb')) do |v|
         v.puts <<EOT
 #{module_type} #{path_module}
   # #{path_module} version
@@ -273,9 +273,7 @@ EOT
     task :gemspec => :version do
       filename = "#{name}.gemspec"
       warn "Writing to #{filename.inspect} for #{version}"
-      write(filename) do |output|
-        output.write gemspec.to_ruby
-      end
+      seecure_write(filename, gemspec.to_ruby)
     end
   end
 
@@ -336,19 +334,19 @@ EOT
     else
       desc 'Run the rcov code coverage tests'
       task :rcov => [ (:compile if extensions.full?) ].compact do
-        warn "rcov doesn't work for some reason"
+        warn "rcov doesn't work for some reason, have you tried 'gem install rcov'?"
       end
     end
   end
 
   def write_ignore_file 
-    write('.gitignore') do |output|
+    secure_write('.gitignore') do |output|
       output.puts(*ignore.sort)
     end
   end
 
   def write_gemfile
-    write('Gemfile') do |output|
+    secure_write('Gemfile') do |output|
       output.puts <<EOT
 # vim: set filetype=ruby et sw=2 ts=2:
 
@@ -393,7 +391,7 @@ EOT
   def rvm_task
     desc 'Create .rvmrc file'
     task :rvm do
-      write('.rvmrc') do |output|
+      secure_write('.rvmrc') do |output|
         output.write <<EOT
 rvm use #{rvm.use}
 rvm gemset create #{rvm.gemset}

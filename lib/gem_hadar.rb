@@ -208,7 +208,7 @@ class GemHadar
   def gems_install_task(&block)
     block ||= proc {  sh 'bundle install' }
     desc 'Install all gems from the Gemfile'
-    task :'gems:install', &block
+    task :'gems:install' => :gemspec , &block
   end
 
   def gemspec

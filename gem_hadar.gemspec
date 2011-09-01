@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{gem_hadar}
-  s.version = "0.0.11"
+  s.version = "0.0.12"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = [%q{Florian Frank}]
-  s.date = %q{2011-08-05}
+  s.date = %q{2011-09-01}
   s.description = %q{This library contains some useful functionality to support the development of Ruby Gems}
   s.email = %q{flori@ping.de}
   s.extra_rdoc_files = [%q{README.rdoc}, %q{lib/gem_hadar.rb}, %q{lib/gem_hadar/version.rb}]
@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://github.com/flori/gem_hadar}
   s.rdoc_options = [%q{--title}, %q{GemHadar - Library for the development of Ruby Gems}, %q{--main}, %q{README.rdoc}]
   s.require_paths = [%q{lib}]
-  s.rubygems_version = %q{1.8.6}
+  s.rubygems_version = %q{1.8.8}
   s.summary = %q{Library for the development of Ruby Gems}
 
   if s.respond_to? :specification_version then

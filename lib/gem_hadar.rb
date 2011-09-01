@@ -220,11 +220,11 @@ class GemHadar
       s.homepage    = homepage
       s.summary     = summary
       s.description = description
-      s.files       = files
-      s.test_files  = test_files
-      extensions.full? { |e| s.extensions = e }
+      files.full? { |f| s.files = Array(f) }
+      test_files.full? { |t| s.test_files = Array(t) }
+      extensions.full? { |e| s.extensions = Array(e) }
       bindir.full? { |b| s.bindir = b }
-      executables.full?(:to_a) { |e| s.executables = e }
+      executables.full? { |e| s.executables = Array(e) }
 
       s.add_development_dependency('gem_hadar', "~>#{VERSION}")
       for d in @development_dependencies
@@ -234,7 +234,7 @@ class GemHadar
         s.add_dependency(*d)
       end
 
-      s.require_paths = require_paths.to_a
+      require_paths.full? { |r| s.require_paths = Array(r) }
 
       if title
         s.rdoc_options << '--title' << title
@@ -245,7 +245,7 @@ class GemHadar
         s.rdoc_options << '--main' << readme
         s.extra_rdoc_files << readme
       end
-      s.extra_rdoc_files.concat doc_files
+      doc_files.full? { |df| s.extra_rdoc_files.concat Array(df) }
     end
   end
 

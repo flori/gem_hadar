@@ -129,6 +129,8 @@ class GemHadar
     end
   end
 
+  dsl_accessor :version_epilogue
+
   class RvmConfig
     extend DSLKit::DSLAccessor
     include DSLKit::BlockSelf
@@ -265,6 +267,7 @@ class GemHadar
   VERSION_BUILD   = VERSION_ARRAY[2] # :nodoc:
 end
 EOT
+        version_epilogue.full? { |ve| v.puts ve }
       end
     end
   end

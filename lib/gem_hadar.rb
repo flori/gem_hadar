@@ -1,7 +1,7 @@
 
 require 'rubygems'
-require 'spruz/xt'
-require 'spruz/secure_write'
+require 'tins/xt'
+require 'tins/secure_write'
 require 'rbconfig'
 if defined?(::RbConfig)
   include ::RbConfig

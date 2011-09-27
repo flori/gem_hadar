@@ -1,12 +1,14 @@
 
 require 'rubygems'
-require 'tins/xt'
-require 'tins/secure_write'
 require 'rbconfig'
 if defined?(::RbConfig)
   include ::RbConfig
 else
   include ::Config
+end
+begin
+  require 'simplecov'
+rescue LoadError
 end
 require 'rake'
 begin
@@ -17,6 +19,8 @@ begin
   require 'rcov/rcovtask'
 rescue LoadError
 end
+require 'tins/xt'
+require 'tins/secure_write'
 require 'rake/clean'
 require 'rake/testtask'
 require 'dslkit/polite'
@@ -335,10 +339,32 @@ EOT
       end
       desc 'Run the rcov code coverage tests'
       task :rcov => [ (:compile if extensions.full?), rt.name ].compact
+      clobber 'coverage'
     else
       desc 'Run the rcov code coverage tests'
-      task :rcov => [ (:compile if extensions.full?) ].compact do
+      task :rcov do
         warn "rcov doesn't work for some reason, have you tried 'gem install rcov'?"
+      end
+    end
+  end
+
+  def simplecov_task
+    if defined?(::SimpleCov)
+      rt = ::Rake::Task.define_task(:run_simplecov) do
+        SimpleCov.start
+        require 'test/unit'
+        $:.unshift test_dir, *require_paths
+        for f in test_files
+          load f
+        end
+      end
+      desc 'Run the simplecov code coverage tests'
+      task :simplecov => [ (:compile if extensions.full?), rt.name ].compact
+      clobber 'coverage'
+    else
+      desc 'Run the simplecov code coverage tests'
+      task :simplecov do
+        warn "simplecov doesn't work for some reason, have you tried 'gem install simplecov'?"
       end
     end
   end
@@ -416,6 +442,7 @@ EOT
     if test_dir
       test_task
       rcov_task
+      simplecov_task
     end
     package_task
     install_library_task

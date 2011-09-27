@@ -16,7 +16,6 @@ GemHadar do
   dependency  'tins',  '~>0.3'
   dependency  'dslkit', '~>0.2'
   dependency  'sdoc',   '~>0.2.20'
-  #dependency  'rcov',   '~>0.9.9' # Doesn't work on all platforms
   dependency  'rake',   '~>0.9.2'
 
   install_library do

@@ -13,7 +13,7 @@ GemHadar do
   ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock'
   readme      'README.rdoc'
 
-  dependency  'tins',  '~>0.3'
+  dependency  'tins',  '>=0.3.3'
   dependency  'dslkit', '~>0.2'
   dependency  'sdoc',   '~>0.2.20'
   dependency  'rake',   '~>0.9.2'

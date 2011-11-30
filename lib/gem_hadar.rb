@@ -1,4 +1,3 @@
-
 require 'rubygems'
 require 'rbconfig'
 if defined?(::RbConfig)
@@ -6,19 +5,7 @@ if defined?(::RbConfig)
 else
   include ::Config
 end
-begin
-  require 'simplecov'
-rescue LoadError
-end
 require 'rake'
-begin
-  require 'rubygems/package_task'
-rescue LoadError
-end
-begin
-  require 'rcov/rcovtask'
-rescue LoadError
-end
 require 'tins/xt'
 require 'tins/secure_write'
 require 'rake/clean'
@@ -26,6 +13,10 @@ require 'rake/testtask'
 require 'dslkit/polite'
 require 'set'
 require 'gem_hadar/version'
+require_maybe 'simplecov'
+require_maybe 'rubygems/package_task'
+require_maybe 'rcov/rcovtask'
+require_maybe 'rspec/core/rake_task'
 
 def GemHadar(&block)
   GemHadar.new(&block).create_all_tasks
@@ -104,6 +95,16 @@ class GemHadar
       FileList[File.join(test_dir, '**/*.rb')]
     else
       FileList.new
+    end
+  end
+
+  dsl_accessor :spec_dir
+
+  dsl_accessor :spec_pattern do
+    if spec_dir
+      "#{spec}{,/*/**}/*_spec.rb"
+    else
+      'spec{,/*/**}/*_spec.rb'
     end
   end
 
@@ -328,11 +329,24 @@ EOT
     task :test => [ (:compile if extensions.full?), tt.name ].compact
   end
 
+  def spec_task
+    if defined?(::RSpec::Core::RakeTask)
+      st =  RSpec::Core::RakeTask.new(:run_specs) do |t|
+        t.ruby_opts ||= ''
+        t.ruby_opts << ' -I' << ([ spec_dir ] + require_paths.to_a).uniq * ':'
+        t.pattern = spec_pattern
+        t.verbose = true
+      end
+      task :spec => [ (:compile if extensions.full?), st.name ].compact
+    end
+  end
+
   def rcov_task
     if defined?(::Rcov)
       rt = ::Rcov::RcovTask.new(:run_rcov) do |t|
         t.libs << test_dir
         t.libs.concat require_paths.to_a
+        t.libs.uniq!
         t.test_files = test_files
         t.verbose    = true
         t.rcov_opts  = %W[-x '\\b#{test_dir}\/' -x '\\bgems\/']
@@ -376,14 +390,23 @@ EOT
   end
 
   def write_gemfile
-    secure_write('Gemfile') do |output|
-      output.puts <<EOT
+     default_gemfile =<<EOT
 # vim: set filetype=ruby et sw=2 ts=2:
 
 source :rubygems
 
 gemspec
 EOT
+    current_gemfile = File.exist?('Gemfile') && File.read('Gemfile')
+    case current_gemfile
+    when false
+      secure_write('Gemfile') do |output|
+        output.write default_gemfile
+      end
+    when default_gemfile
+      ;;
+    else
+      warn "INFO: Current Gemfile differs from default Gemfile."
     end
   end
 
@@ -444,6 +467,7 @@ EOT
       rcov_task
       simplecov_task
     end
+    spec_task
     package_task
     install_library_task
     version_tag_task

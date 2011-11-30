@@ -102,7 +102,7 @@ class GemHadar
 
   dsl_accessor :spec_pattern do
     if spec_dir
-      "#{spec}{,/*/**}/*_spec.rb"
+      "#{spec_dir}{,/*/**}/*_spec.rb"
     else
       'spec{,/*/**}/*_spec.rb'
     end

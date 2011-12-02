@@ -424,20 +424,24 @@ EOT
     end
   end
 
+  def git_remote
+    ENV['GIT_REMOTE'] || 'origin'
+  end
+
   def version_push_task
     namespace :version do
-      desc "Push all versions to origin"
+      desc "Push all versions to git remote"
       task :push do
-        sh "git push --tags"
+        sh "git push #{git_remote} --tags"
       end
     end
   end
 
   def master_push_task
     namespace :master do
-      desc "Push master to origin"
+      desc "Push master to git remote"
       task :push do
-        sh "git push origin master"
+        sh "git push #{git_remote} master"
       end
     end
   end

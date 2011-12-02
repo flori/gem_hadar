@@ -332,7 +332,6 @@ EOT
   def spec_task
     if defined?(::RSpec::Core::RakeTask)
       st =  RSpec::Core::RakeTask.new(:run_specs) do |t|
-        t.ruby_opts ||= ''
         t.ruby_opts << ' -I' << ([ spec_dir ] + require_paths.to_a).uniq * ':'
         t.pattern = spec_pattern
         t.verbose = true
@@ -362,18 +361,25 @@ EOT
     end
   end
 
+  def self.start_simplecov
+    filter = "#{File.basename(File.dirname(caller.first))}/"
+    require_maybe 'simplecov'
+    defined?(SimpleCov) and
+      SimpleCov.start do
+        add_filter filter
+      end
+  end
+
   def simplecov_task
     if defined?(::SimpleCov)
-      rt = ::Rake::Task.define_task(:run_simplecov) do
-        SimpleCov.start
-        require 'test/unit'
-        $:.unshift test_dir, *require_paths
-        for f in test_files
-          load f
-        end
+      tt = ::Rake::TestTask.new(:run_simplecov) do |t|
+        t.test_files = test_files
+        t.ruby_opts << '-I' << ([ test_dir ] + require_paths.to_a).uniq * ':'
+        t.verbose = true
+        t.warning = true
       end
       desc 'Run the simplecov code coverage tests'
-      task :simplecov => [ (:compile if extensions.full?), rt.name ].compact
+      task :simplecov => [ (:compile if extensions.full?), tt.name ].compact
       clobber 'coverage'
     else
       desc 'Run the simplecov code coverage tests'

@@ -416,10 +416,28 @@ EOT
       task :tag do
         begin
           sh "git tag -a -m 'Version #{version}' #{'-f' if ENV['FORCE']} v#{version}"
-        rescue RuntimeError => e
+        rescue RuntimeError
           warn "Call rake with FORCE=1 to overwrite version tag #{version}"
           exit 1
         end
+      end
+    end
+  end
+
+  def version_push_task
+    namespace :version do
+      desc "Push all versions to origin"
+      task :push do
+        sh "git push --tags"
+      end
+    end
+  end
+
+  def master_push_task
+    namespace :master do
+      desc "Push master to origin"
+      task :push do
+        sh "git push origin master"
       end
     end
   end
@@ -471,6 +489,8 @@ EOT
     package_task
     install_library_task
     version_tag_task
+    version_push_task
+    master_push_task
     write_ignore_file
     write_gemfile
     if extensions.full?

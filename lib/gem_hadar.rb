@@ -370,25 +370,6 @@ EOT
       end
   end
 
-  def simplecov_task
-    if defined?(::SimpleCov)
-      tt = ::Rake::TestTask.new(:run_simplecov) do |t|
-        t.test_files = test_files
-        t.ruby_opts << '-I' << ([ test_dir ] + require_paths.to_a).uniq * ':'
-        t.verbose = true
-        t.warning = true
-      end
-      desc 'Run the simplecov code coverage tests'
-      task :simplecov => [ (:compile if extensions.full?), tt.name ].compact
-      clobber 'coverage'
-    else
-      desc 'Run the simplecov code coverage tests'
-      task :simplecov do
-        warn "simplecov doesn't work for some reason, have you tried 'gem install simplecov'?"
-      end
-    end
-  end
-
   def write_ignore_file 
     secure_write('.gitignore') do |output|
       output.puts(*ignore.sort)

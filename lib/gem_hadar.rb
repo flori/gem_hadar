@@ -474,7 +474,6 @@ EOT
     if test_dir
       test_task
       rcov_task
-      simplecov_task
     end
     spec_task
     package_task

@@ -332,6 +332,7 @@ EOT
   def spec_task
     if defined?(::RSpec::Core::RakeTask)
       st =  RSpec::Core::RakeTask.new(:run_specs) do |t|
+        t.ruby_opts ||= ''
         t.ruby_opts << ' -I' << ([ spec_dir ] + require_paths.to_a).uniq * ':'
         t.pattern = spec_pattern
         t.verbose = true

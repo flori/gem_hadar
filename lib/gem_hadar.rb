@@ -46,6 +46,10 @@ class GemHadar
     has_to_be_set :name
   end
 
+  dsl_accessor :name_version do
+    [ name, version ] * '-'
+  end
+
   dsl_accessor :module_type, :module
 
   dsl_accessor :author do
@@ -215,7 +219,9 @@ class GemHadar
   def gems_install_task(&block)
     block ||= proc {  sh 'bundle install' }
     desc 'Install all gems from the Gemfile'
-    task :'gems:install' => :gemspec , &block
+    namespace :gems do
+      task :install => :gemspec , &block
+    end
   end
 
   def gemspec
@@ -292,7 +298,7 @@ EOT
       pkg.package_files += files
     end
   end
-  
+
   def install_library_task
     @install_library_block.full?(:call)
   end
@@ -434,6 +440,27 @@ EOT
     end
   end
 
+  def gem_push_task
+    namespace :gem do
+      path = "pkg/#{name_version}.gem"
+      desc "Push gem file #{File.basename(path)} to rubygems"
+      task :push do
+        if File.exist?(path)
+          if ask?("Do you really want to push #{path.inspect} to rubygems? "\
+            "(yes/NO) ", /\Ayes\Z/i)
+          then
+            sh "gem push #{path}"
+          else
+            exit 1
+          end
+        else
+          warn "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
+          exit 1
+        end
+      end
+    end
+  end
+
   def compile_task
     for file in extensions
       dir = File.dirname(file)
@@ -464,6 +491,14 @@ EOT
     end
   end
 
+  def ask?(prompt, pattern)
+    STDOUT.print prompt
+    answer = STDIN.gets.chomp
+    if answer =~ pattern
+      $~
+    end
+  end
+
   def create_all_tasks
     default_task
     build_task
@@ -484,6 +519,7 @@ EOT
     master_push_task
     write_ignore_file
     write_gemfile
+    gem_push_task
     if extensions.full?
       compile_task
       task :prepare_install => :compile

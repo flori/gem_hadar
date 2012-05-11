@@ -21,20 +21,20 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_development_dependency(%q<gem_hadar>, ["~> 0.1.7"])
+      s.add_development_dependency(%q<gem_hadar>, ["~> 0.1.8"])
       s.add_runtime_dependency(%q<tins>, [">= 0.3.3"])
       s.add_runtime_dependency(%q<dslkit>, ["~> 0.2"])
       s.add_runtime_dependency(%q<sdoc>, ["~> 0.2.20"])
       s.add_runtime_dependency(%q<rake>, ["~> 0.9.2"])
     else
-      s.add_dependency(%q<gem_hadar>, ["~> 0.1.7"])
+      s.add_dependency(%q<gem_hadar>, ["~> 0.1.8"])
       s.add_dependency(%q<tins>, [">= 0.3.3"])
       s.add_dependency(%q<dslkit>, ["~> 0.2"])
       s.add_dependency(%q<sdoc>, ["~> 0.2.20"])
       s.add_dependency(%q<rake>, ["~> 0.9.2"])
     end
   else
-    s.add_dependency(%q<gem_hadar>, ["~> 0.1.7"])
+    s.add_dependency(%q<gem_hadar>, ["~> 0.1.8"])
     s.add_dependency(%q<tins>, [">= 0.3.3"])
     s.add_dependency(%q<dslkit>, ["~> 0.2"])
     s.add_dependency(%q<sdoc>, ["~> 0.2.20"])

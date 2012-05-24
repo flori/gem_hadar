@@ -447,7 +447,7 @@ EOT
       task :push do
         if File.exist?(path)
           if ask?("Do you really want to push #{path.inspect} to rubygems? "\
-            "(yes/NO) ", /\Ayes\Z/i)
+            "(yes/NO) ", /\Ayes\z/i)
           then
             sh "gem push #{path}"
           else

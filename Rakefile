@@ -15,8 +15,9 @@ GemHadar do
 
   dependency  'tins',  '>=0.3.3'
   dependency  'dslkit', '~>0.2'
-  dependency  'sdoc',   '~>0.2.20'
-  dependency  'rake',   '~>0.9.2'
+  dependency  'sdoc',   '~>0.3'
+  dependency  'rake',   '~>0.10'
+  development_dependency 'utils'
 
   install_library do
     libdir = CONFIG["sitelibdir"]

@@ -424,7 +424,7 @@ EOT
 
   def version_push_task
     namespace :version do
-      desc "Push all versions to git remote"
+      desc "Push all versions to GIT_REMOTE=#{git_remote}"
       task :push do
         sh "git push #{git_remote} --tags"
       end

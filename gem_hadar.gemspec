@@ -26,14 +26,14 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<tins>, [">= 0.3.3"])
       s.add_runtime_dependency(%q<dslkit>, ["~> 0.2"])
       s.add_runtime_dependency(%q<sdoc>, ["~> 0.2.20"])
-      s.add_runtime_dependency(%q<rake>, ["~> 10.0"])
+      s.add_runtime_dependency(%q<rake>, [">= 0"])
     else
       s.add_dependency(%q<gem_hadar>, ["~> 0.1.8"])
       s.add_dependency(%q<utils>, [">= 0"])
       s.add_dependency(%q<tins>, [">= 0.3.3"])
       s.add_dependency(%q<dslkit>, ["~> 0.2"])
       s.add_dependency(%q<sdoc>, ["~> 0.2.20"])
-      s.add_dependency(%q<rake>, ["~> 10.0"])
+      s.add_dependency(%q<rake>, ["=> 0"])
     end
   else
     s.add_dependency(%q<gem_hadar>, ["~> 0.1.8"])
@@ -41,6 +41,6 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<tins>, [">= 0.3.3"])
     s.add_dependency(%q<dslkit>, ["~> 0.2"])
     s.add_dependency(%q<sdoc>, ["~> 0.2.20"])
-    s.add_dependency(%q<rake>, ["~> 10.0"])
+    s.add_dependency(%q<rake>, ["=> 0"])
   end
 end

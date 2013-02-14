@@ -9,15 +9,14 @@ GemHadar do
   email       'flori@ping.de'
   homepage    "http://github.com/flori/#{name}"
   summary     'Library for the development of Ruby Gems'
-  description 'This library contains some useful functionality to support the development of Ruby Gems' 
-  ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock'
+  description 'This library contains some useful functionality to support the development of Ruby Gems'
+  ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble'
   readme      'README.rdoc'
 
   dependency  'tins',  '>=0.3.3'
   dependency  'dslkit', '~>0.2'
   dependency  'sdoc',   '~>0.3'
-  dependency  'rake',   '~>0.10'
-  development_dependency 'utils'
+  dependency  'rake',   '~>10.0'
 
   install_library do
     libdir = CONFIG["sitelibdir"]

@@ -272,7 +272,7 @@ class GemHadar
 #{module_type} #{path_module}
   # #{path_module} version
   VERSION         = '#{version}'
-  VERSION_ARRAY   = VERSION.split(/\\./).map { |x| x.to_i } # :nodoc:
+  VERSION_ARRAY   = VERSION.split('.').map(&:to_i) # :nodoc:
   VERSION_MAJOR   = VERSION_ARRAY[0] # :nodoc:
   VERSION_MINOR   = VERSION_ARRAY[1] # :nodoc:
   VERSION_BUILD   = VERSION_ARRAY[2] # :nodoc:
@@ -379,7 +379,7 @@ EOT
 
   def write_ignore_file 
     secure_write('.gitignore') do |output|
-      output.puts(*ignore.sort)
+      output.puts(ignore.sort)
     end
   end
 

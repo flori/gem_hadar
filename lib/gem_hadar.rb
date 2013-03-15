@@ -94,6 +94,8 @@ class GemHadar
 
   dsl_accessor :executables do Set[] end
 
+  dsl_accessor :licenses do Set[] end
+
   dsl_accessor :test_files do
     if test_dir
       FileList[File.join(test_dir, '**/*.rb')]
@@ -238,6 +240,7 @@ class GemHadar
       extensions.full? { |e| s.extensions = Array(e) }
       bindir.full? { |b| s.bindir = b }
       executables.full? { |e| s.executables = Array(e) }
+      licenses.full? { |l| s.licenses = Array(licenses) }
 
       s.add_development_dependency('gem_hadar', "~>#{VERSION}")
       for d in @development_dependencies

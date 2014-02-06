@@ -1,4 +1,5 @@
 .*.sw[pon]
 .AppleDouble
+.bundle
 Gemfile.lock
 pkg

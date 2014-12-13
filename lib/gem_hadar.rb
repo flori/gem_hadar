@@ -576,4 +576,5 @@ def template(pathname, &block)
   file template_dst.to_s => template_src.to_s do
     TemplateCompiler.new(&block).compile(template_src, template_dst)
   end
+  template_dst
 end

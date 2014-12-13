@@ -12,6 +12,8 @@ require 'rake/clean'
 require 'rake/testtask'
 require 'dslkit/polite'
 require 'set'
+require 'pathname'
+require 'erb'
 require 'gem_hadar/version'
 require_maybe 'simplecov'
 require_maybe 'rubygems/package_task'
@@ -30,7 +32,7 @@ class GemHadar
   end
   include Rake::DSL
   extend DSLKit::DSLAccessor
-  include Spruz::SecureWrite
+  include Tins::SecureWrite
 
   def initialize(&block)
     @dependencies = []
@@ -383,7 +385,7 @@ EOT
       end
   end
 
-  def write_ignore_file 
+  def write_ignore_file
     secure_write('.gitignore') do |output|
       output.puts(ignore.sort)
     end
@@ -533,5 +535,45 @@ EOT
       task :prepare_install
     end
     self
+  end
+
+  class TemplateCompiler
+    include Tins::BlockSelf
+    include Tins::MethodMissingDelegator::DelegatorModule
+
+    def initialize(&block)
+      super block_self(&block)
+      @values = {}
+      instance_eval(&block)
+    end
+
+    def compile(src, dst)
+      template = File.read(src)
+      File.open(dst, 'w') do |output|
+        erb = ERB.new(template, nil, '-')
+        erb.filename = src.to_s
+        output.write erb.result binding
+      end
+    end
+
+    def method_missing(id, *a, &b)
+      if a.empty? && id && @values.key?(id)
+        @values[id]
+      elsif a.size == 1
+        @values[id] = a.first
+      else
+        super
+      end
+    end
+  end
+end
+
+def template(pathname, &block)
+  template_src = Pathname.new(pathname)
+  template_dst = template_src.sub_ext('') # ignore ext, we just support erb anyway
+  template_src == template_dst and raise ArgumentError,
+    "pathname #{pathname.inspect} needs to have a file extension"
+  file template_dst.to_s => template_src.to_s do
+    TemplateCompiler.new(&block).compile(template_src, template_dst)
   end
 end

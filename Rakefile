@@ -11,7 +11,7 @@ GemHadar do
   summary     'Library for the development of Ruby Gems'
   description 'This library contains some useful functionality to support the development of Ruby Gems'
   ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble', '.bundle'
-  readme      'README.rdoc'
+  readme      'README.md'
 
   dependency  'tins', '~>1.0'
   dependency  'sdoc', '~>0.3'

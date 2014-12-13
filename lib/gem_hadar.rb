@@ -574,7 +574,7 @@ def template(pathname, &block)
   template_src == template_dst and raise ArgumentError,
     "pathname #{pathname.inspect} needs to have a file extension"
   file template_dst.to_s => template_src.to_s do
-    TemplateCompiler.new(&block).compile(template_src, template_dst)
+    GemHadar::TemplateCompiler.new(&block).compile(template_src, template_dst)
   end
   template_dst
 end

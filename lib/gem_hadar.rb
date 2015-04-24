@@ -412,6 +412,33 @@ EOT
     end
   end
 
+  def version_bump_task
+    namespace :version do
+      namespace :bump do
+        desc 'Bump major version'
+        task :major do
+          version = File.read('VERSION').chomp.version
+          version.bump(:major)
+          secure_write('VERSION') { |v| v.puts version }
+        end
+
+        desc 'Bump minor version'
+        task :minor do
+          version = File.read('VERSION').chomp.version
+          version.bump(:minor)
+          secure_write('VERSION') { |v| v.puts version }
+        end
+
+        desc 'Bump build version'
+        task :build do
+          version = File.read('VERSION').chomp.version
+          version.bump(:build)
+          secure_write('VERSION') { |v| v.puts version }
+        end
+      end
+    end
+  end
+
   def version_tag_task
     namespace :version do
       desc "Tag this commit as version #{version}"
@@ -522,6 +549,7 @@ EOT
     spec_task
     package_task
     install_library_task
+    version_bump_task
     version_tag_task
     version_push_task
     master_push_task

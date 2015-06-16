@@ -146,6 +146,8 @@ class GemHadar
 
   dsl_accessor :post_install_message
 
+  dsl_accessor :required_ruby_version
+
   class RvmConfig
     extend DSLKit::DSLAccessor
     include DSLKit::BlockSelf
@@ -239,6 +241,7 @@ class GemHadar
       s.homepage    = homepage
       s.summary     = summary
       s.description = description
+
       files.full? { |f| s.files = Array(f) }
       test_files.full? { |t| s.test_files = Array(t) }
       extensions.full? { |e| s.extensions = Array(e) }
@@ -247,6 +250,7 @@ class GemHadar
       licenses.full? { |l| s.licenses = Array(licenses) }
       post_install_message.full? { |m| s.post_install_message = m }
 
+      required_ruby_version.full? { |v| s.required_rubygems_version = v }
       s.add_development_dependency('gem_hadar', "~>#{VERSION}")
       for d in @development_dependencies
         s.add_development_dependency(*d)

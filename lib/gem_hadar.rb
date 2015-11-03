@@ -256,7 +256,11 @@ class GemHadar
         s.add_development_dependency(*d)
       end
       for d in @dependencies
-        s.add_dependency(*d)
+        if s.respond_to?(:add_runtime_dependency)
+          s.add_runtime_dependency(*d)
+        else
+          s.add_dependency(*d)
+        end
       end
 
       require_paths.full? { |r| s.require_paths = Array(r) }

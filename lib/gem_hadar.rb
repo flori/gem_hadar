@@ -514,8 +514,14 @@ EOT
     version_push_task
     master_push_task
     gem_push_task
+    task :modified do
+      unless (files = `git status --porcelain`.gsub(/^\s*\S\s+/, '').lines).empty?
+        warn "There are still modified files:\n#{files * ''}"
+        exit 1
+      end
+    end
     desc "Push master and version #{version} to GIT_REMOTE=#{git_remote}"
-    task :push => %i[ master:push version:push gem:push ]
+    task :push => %i[ modified master:push version:push gem:push ]
   end
 
   def compile_task

@@ -493,7 +493,7 @@ EOT
     namespace :gem do
       path = "pkg/#{name_version}.gem"
       desc "Push gem file #{File.basename(path)} to rubygems"
-      task :push do
+      task :push => :build do
         if File.exist?(path)
           if ask?("Do you really want to push #{path.inspect} to rubygems? "\
             "(yes/NO) ", /\Ayes\z/i)

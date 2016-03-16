@@ -451,11 +451,17 @@ EOT
     namespace :version do
       desc "Tag this commit as version #{version}"
       task :tag do
+        force = ENV['FORCE'].to_i == 1
         begin
-          sh "git tag -a -m 'Version #{version}' #{'-f' if ENV['FORCE']} v#{version}"
+          sh "git tag -a -m 'Version #{version}' #{'-f' if force} v#{version}"
         rescue RuntimeError
-          warn "Call rake with FORCE=1 to overwrite version tag #{version}"
-          exit 1
+          if ask?("Version tag #{version} already exists. Overwrite with "\
+              "force? (yes/NO) ", /\Ayes\z/i)
+            force = true
+            retry
+          else
+            exit 1
+          end
         end
       end
     end
@@ -476,7 +482,7 @@ EOT
 
   def master_push_task
     namespace :master do
-      desc "Push master to git remote"
+      desc "Push master to GIT_REMOTE=#{git_remote}"
       task :push do
         sh "git push #{git_remote} master"
       end
@@ -502,6 +508,14 @@ EOT
         end
       end
     end
+  end
+
+  def push_task
+    version_push_task
+    master_push_task
+    gem_push_task
+    desc "Push master and version #{version} to GIT_REMOTE=#{git_remote}"
+    task :push => %i[ master:push version:push gem:push ]
   end
 
   def compile_task
@@ -559,11 +573,9 @@ EOT
     install_library_task
     version_bump_task
     version_tag_task
-    version_push_task
-    master_push_task
+    push_task
     write_ignore_file
     write_gemfile
-    gem_push_task
     if extensions.full?
       compile_task
       task :prepare_install => :compile

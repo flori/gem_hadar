@@ -17,6 +17,8 @@ GemHadar do
   dependency  'sdoc', '~>0.3'
   dependency  'rake', '~>10.0'
 
+  licenses << 'MIT'
+
   install_library do
     libdir = CONFIG["sitelibdir"]
     install("lib/#{name}.rb", libdir, :mode => 0644)

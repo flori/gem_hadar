@@ -14,6 +14,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.md", "lib/gem_hadar.rb", "lib/gem_hadar/version.rb"]
   s.files = [".gitignore", "Gemfile", "LICENSE", "README.md", "Rakefile", "VERSION", "gem_hadar.gemspec", "lib/gem_hadar.rb", "lib/gem_hadar/version.rb"]
   s.homepage = "http://github.com/flori/gem_hadar"
+  s.licenses = ["MIT"]
   s.rdoc_options = ["--title", "GemHadar - Library for the development of Ruby Gems", "--main", "README.md"]
   s.rubygems_version = "2.5.1"
   s.summary = "Library for the development of Ruby Gems"

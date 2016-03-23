@@ -323,19 +323,12 @@ EOT
     clean 'doc'
     desc "Creating documentation"
     task :doc do
-      cmd = 'sdoc'
+      sh 'yard doc'
+      cmd = 'yardoc'
       if readme
-        cmd << " --main '#{readme}'"
+        cmd << " --readme '#{readme}'"
       end
-      if title
-        cmd << " --title '#{title}'"
-      else
-        cmd << " --title '#{name.camelize} - #{summary}'"
-      end
-      cmd << ' ' << doc_files * ' '
-      if readme
-        cmd << " #{readme}"
-      end
+      cmd << ' - ' << doc_files * ' '
       sh cmd
     end
   end

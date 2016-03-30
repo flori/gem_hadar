@@ -539,7 +539,7 @@ EOT
       end
     end
     desc "Push master and version #{version} all git remotes: #{git_remotes * ' '}"
-    task :push => %i[ modified master:push version:push gem:push ]
+    task :push => %i[ modified build master:push version:push gem:push ]
   end
 
   def compile_task

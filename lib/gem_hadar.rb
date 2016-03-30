@@ -461,24 +461,45 @@ EOT
   end
 
   def git_remote
-    ENV['GIT_REMOTE'] || 'origin'
+    ENV.fetch('GIT_REMOTE', 'origin').split(/\s+/).first
+  end
+
+  def git_remotes
+    remotes = ENV['GIT_REMOTE']&.split(/\s+/)
+    remotes or remotes = `git remote`.lines.map(&:chomp)
+    remotes.empty? and fail 'git remotes are required'
+    remotes
   end
 
   def version_push_task
     namespace :version do
-      desc "Push version #{version} to GIT_REMOTE=#{git_remote}"
-      task :push do
-        sh "git push #{git_remote} v#{version}"
+      git_remotes.each do |gr|
+        namespace gr.to_sym do
+          desc "Push version #{version} to git remote #{gr}"
+          task :push do
+            sh "git push #{gr} v#{version}"
+          end
+        end
       end
+
+      desc "Push version #{version} to all git remotes: #{git_remotes * ' '}"
+      task :push => git_remotes.map { |gr| :"version:#{gr}:push" }
     end
   end
 
   def master_push_task
     namespace :master do
-      desc "Push master to GIT_REMOTE=#{git_remote}"
-      task :push do
-        sh "git push #{git_remote} master"
+      git_remotes.each do |gr|
+        namespace gr.to_sym do
+          desc "Push master to git remote #{gr}"
+          task :push do
+            sh "git push #{gr} master"
+          end
+        end
       end
+
+      desc "Push master #{version} to all git remotes: #{git_remotes * ' '}"
+      task :push => git_remotes.map { |gr| :"master:#{gr}:push" }
     end
   end
 
@@ -513,7 +534,7 @@ EOT
         exit 1
       end
     end
-    desc "Push master and version #{version} to GIT_REMOTE=#{git_remote}"
+    desc "Push master and version #{version} all git remotes: #{git_remotes * ' '}"
     task :push => %i[ modified master:push version:push gem:push ]
   end
 

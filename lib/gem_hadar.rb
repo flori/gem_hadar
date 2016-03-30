@@ -448,12 +448,16 @@ EOT
         begin
           sh "git tag -a -m 'Version #{version}' #{'-f' if force} v#{version}"
         rescue RuntimeError
-          if ask?("Version tag #{version} already exists. Overwrite with "\
-              "force? (yes/NO) ", /\Ayes\z/i)
-            force = true
-            retry
+          if `git diff v#{version}..HEAD`.empty?
+            puts "Version #{version} is already tagged, but it's no different"
           else
-            exit 1
+            if ask?("Different version tag #{version} already exists. Overwrite with "\
+                "force? (yes/NO) ", /\Ayes\z/i)
+              force = true
+              retry
+            else
+              exit 1
+            end
           end
         end
       end

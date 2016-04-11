@@ -471,8 +471,24 @@ EOT
   def git_remotes
     remotes = ENV['GIT_REMOTE']&.split(/\s+/)
     remotes or remotes = `git remote`.lines.map(&:chomp)
-    remotes.empty? and fail 'git remotes are required'
     remotes
+  end
+
+  def master_prepare_task
+    namespace :master do
+      desc "Prepare a remote git repository for this project"
+      task :prepare do
+        puts "Create a new remote git repository for #{name.inspect}"
+        remote_name = ask?('Name (default: origin) ? ', /^.+$/).
+          full?(:[], 0) || 'origin'
+        dir         = ask?("Directory (default: /git/#{name}.git)? ", /^.+$/).
+          full?(:[], 0) || "/git/#{name}.git"
+        ssh_account = ask?('SSH account (format: login@host)? ', /^[^@]+@[^@]+/).
+          full?(:[], 0) || exit(1)
+        sh "ssh #{ssh_account} 'git init --bare #{dir}'"
+        sh "git remote add -m master #{remote_name} #{ssh_account}:#{dir}"
+      end
+    end
   end
 
   def version_push_task
@@ -529,6 +545,7 @@ EOT
   end
 
   def push_task
+    master_prepare_task
     version_push_task
     master_push_task
     gem_push_task

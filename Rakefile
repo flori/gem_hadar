@@ -14,7 +14,7 @@ GemHadar do
   readme      'README.md'
 
   dependency  'tins', '~>1.0'
-  dependency  'rake', '~>10.0'
+  dependency  'rake'
   dependency  'yard'
 
   licenses << 'MIT'

@@ -469,7 +469,7 @@ EOT
   end
 
   def git_remotes
-    remotes = ENV['GIT_REMOTE']&.split(/\s+/)
+    remotes = ENV['GIT_REMOTE'].full?(:split, /\s+/)
     remotes or remotes = `git remote`.lines.map(&:chomp)
     remotes
   end

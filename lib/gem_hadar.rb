@@ -544,11 +544,21 @@ EOT
     end
   end
 
+  def git_remotes_task
+    task :git_remotes do
+      puts git_remotes.map { |r|
+        url = `git remote get-url #{r.inspect}`.chomp
+        "#{r} #{url}"
+      }
+    end
+  end
+
   def push_task
     master_prepare_task
     version_push_task
     master_push_task
     gem_push_task
+    git_remotes_task
     task :modified do
       unless (files = `git status --porcelain`.gsub(/^\s*\S\s+/, '').lines).empty?
         warn "There are still modified files:\n#{files * ''}"

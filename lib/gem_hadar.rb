@@ -316,6 +316,34 @@ EOT
     end
   end
 
+  def gem_hadar_update_task
+    namespace :gem_hadar do
+      desc 'Update gem_hadar a different version'
+      task :update do
+        answer = ask?("Which gem_hadar version? ", /^((?:\d+.){2}(?:\d+))$/)
+        unless answer
+          warn "Invalid version specification!"
+          exit 1
+        end
+        gem_hadar_version = answer[0]
+        filename = "#{name}.gemspec"
+        old_data = File.read(filename)
+        new_data = old_data.gsub(
+          /(add_(?:development_)?dependency\(%q<gem_hadar>, \["~> )([\d.]+)("\])/
+        ) { "#$1#{gem_hadar_version}#$3" }
+        if old_data == new_data
+          warn "#{filename.inspect} already depends on gem_hadar "\
+            "#{gem_hadar_version} => Do nothing."
+        else
+          warn "Upgrading #{filename.inspect} to #{gem_hadar_version}."
+          secure_write(filename) do |spec|
+            spec.write new_data
+          end
+        end
+      end
+    end
+  end
+
   def gemspec_task
     desc 'Create a gemspec file'
     task :gemspec => :version do
@@ -630,6 +658,7 @@ EOT
     rvm_task
     version_task
     version_show_task
+    gem_hadar_update_task
     gemspec_task
     gems_install_task
     doc_task

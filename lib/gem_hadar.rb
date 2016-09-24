@@ -299,6 +299,23 @@ EOT
     end
   end
 
+  def version_show_task
+    namespace :version do
+      desc m = "Displaying the current version"
+      task :show do
+        dir = File.join('lib', path_name)
+        version_file = File.join(dir, 'version.rb')
+        m = Module.new
+        m.instance_eval File.read(version_file)
+        version_rb   = m.const_get(
+          [ path_module, path_module, 'VERSION' ] * '::'
+        )
+        equal        = version == version_rb ? '==' : '!='
+        puts "version.rb=#{version_rb} #{equal} VERSION=#{version}"
+      end
+    end
+  end
+
   def gemspec_task
     desc 'Create a gemspec file'
     task :gemspec => :version do
@@ -612,6 +629,7 @@ EOT
     build_task
     rvm_task
     version_task
+    version_show_task
     gemspec_task
     gems_install_task
     doc_task

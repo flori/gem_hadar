@@ -304,12 +304,13 @@ EOT
     namespace :version do
       desc m = "Displaying the current version"
       task :show do
+        require path_name
         dir = File.join('lib', path_name)
         version_file = File.join(dir, 'version.rb')
         m = Module.new
         m.instance_eval File.read(version_file)
         version_rb   = m.const_get(
-          [ path_module, path_module, 'VERSION' ] * '::'
+          [ path_module, 'VERSION' ] * '::'
         )
         equal        = version == version_rb ? '==' : '!='
         puts "version.rb=#{version_rb} #{equal} VERSION=#{version}"

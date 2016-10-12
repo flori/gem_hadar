@@ -15,6 +15,7 @@ require 'set'
 require 'pathname'
 require 'erb'
 require 'gem_hadar/version'
+require_maybe 'yard'
 require_maybe 'simplecov'
 require_maybe 'rubygems/package_task'
 require_maybe 'rcov/rcovtask'
@@ -390,15 +391,14 @@ EOT
   end
 
   def spec_task
-    if defined?(::RSpec::Core::RakeTask)
-      st =  RSpec::Core::RakeTask.new(:run_specs) do |t|
-        t.ruby_opts ||= ''
-        t.ruby_opts << ' -I' << ([ spec_dir ] + require_paths.to_a).uniq * ':'
-        t.pattern = spec_pattern
-        t.verbose = true
-      end
-      task :spec => [ (:compile if extensions.full?), st.name ].compact
+    defined? ::RSpec::Core::RakeTask or return
+    st =  RSpec::Core::RakeTask.new(:run_specs) do |t|
+      t.ruby_opts ||= ''
+      t.ruby_opts << ' -I' << ([ spec_dir ] + require_paths.to_a).uniq * ':'
+      t.pattern = spec_pattern
+      t.verbose = true
     end
+    task :spec => [ (:compile if extensions.full?), st.name ].compact
   end
 
   def rcov_task
@@ -423,12 +423,11 @@ EOT
   end
 
   def self.start_simplecov
+    defined? SimpleCov or return
     filter = "#{File.basename(File.dirname(caller.first))}/"
-    require_maybe 'simplecov'
-    defined?(SimpleCov) and
-      SimpleCov.start do
-        add_filter filter
-      end
+    SimpleCov.start do
+      add_filter filter
+    end
   end
 
   def write_ignore_file
@@ -644,6 +643,38 @@ EOT
     end
   end
 
+  def yard_task
+    defined? YARD or return
+    namespace :yard do
+      yard_dir = Pathname.new('yard')
+
+      desc 'Create yard documentation (including private)'
+      task :private do
+        sh "yardoc -o #{yard_dir}"
+      end
+
+      desc 'View the yard documentation'
+      task :view do
+        index_file = yard_dir + 'index.html'
+        File.exist?(index_file)
+        sh "open #{index_file}"
+      end
+
+      desc 'Clean the yard documentation'
+      task :clean do
+        rm_rf yard_dir
+      end
+
+      desc 'List all undocumented classes/modules/methods'
+      task :'list-undoc' do
+        sh "yard stats --list-undoc"
+      end
+    end
+
+    desc 'Create the yard documentation and view it'
+    task :yard => %i[ yard:private yard:view ]
+  end
+
   def ask?(prompt, pattern)
     STDOUT.print prompt
     answer = STDIN.gets.chomp
@@ -668,6 +699,7 @@ EOT
     end
     spec_task
     package_task
+    yard_task
     install_library_task
     version_bump_task
     version_tag_task

@@ -577,7 +577,8 @@ EOT
           if ask?("Do you really want to push #{path.inspect} to rubygems? "\
             "(yes/NO) ", /\Ayes\z/i)
           then
-            sh "gem push #{path}"
+            key = ENV['GEM_API_KEY'].full? { |k| "--key #{k} " }
+            sh "gem push #{key}#{path}"
           else
             exit 1
           end

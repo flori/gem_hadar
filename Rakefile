@@ -18,13 +18,4 @@ GemHadar do
   dependency  'yard'
 
   licenses << 'MIT'
-
-  install_library do
-    libdir = CONFIG["sitelibdir"]
-    install("lib/#{name}.rb", libdir, :mode => 0644)
-    mkdir_p subdir = File.join(libdir, name)
-    for f in Dir["lib/#{name}/*.rb"]
-      install(f, subdir)
-    end
-  end
 end

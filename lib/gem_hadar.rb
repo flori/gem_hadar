@@ -318,6 +318,15 @@ EOT
     end
   end
 
+  def version_diff_task
+    namespace :version do
+      desc m = "Displaying the diff from HEAD to the last version tag"
+      task :diff do
+        puts `git diff v#{version}..HEAD`
+      end
+    end
+  end
+
   def gem_hadar_update_task
     namespace :gem_hadar do
       desc 'Update gem_hadar a different version'
@@ -691,6 +700,7 @@ EOT
     rvm_task
     version_task
     version_show_task
+    version_diff_task
     gem_hadar_update_task
     gemspec_task
     gems_install_task

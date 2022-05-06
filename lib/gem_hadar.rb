@@ -131,6 +131,10 @@ class GemHadar
     `git ls-files`.split("\n")
   end
 
+  dsl_accessor :package_ignore_files do
+    Set[]
+  end
+
   dsl_accessor :path_name do name end
 
   dsl_accessor :path_module do path_name.camelize end
@@ -217,6 +221,14 @@ class GemHadar
     end
   end
 
+  def package_ignore(*args)
+    if args.empty?
+      package_ignore_files
+    else
+      args.each { |a| package_ignore_files << a }
+    end
+  end
+
   def dependency(*args)
     @dependencies << args
   end
@@ -233,6 +245,10 @@ class GemHadar
     end
   end
 
+  def gem_files
+    (files.to_a - package_ignore_files.to_a)
+  end
+
   def gemspec
     Gem::Specification.new do |s|
       s.name        = name
@@ -243,7 +259,7 @@ class GemHadar
       s.summary     = summary
       s.description = description
 
-      files.full? { |f| s.files = Array(f) }
+      gem_files.full? { |f| s.files = Array(f) }
       test_files.full? { |t| s.test_files = Array(t) }
       extensions.full? { |e| s.extensions = Array(e) }
       bindir.full? { |b| s.bindir = b }
@@ -367,7 +383,7 @@ EOT
   def package_task
     Gem::PackageTask.new(gemspec) do |pkg|
       pkg.need_tar      = true
-      pkg.package_files += files
+      pkg.package_files += gem_files
     end
   end
 
@@ -615,8 +631,9 @@ EOT
     gem_push_task
     git_remotes_task
     task :modified do
-      unless (files = `git status --porcelain`.gsub(/^\s*\S\s+/, '').lines).empty?
-        warn "There are still modified files:\n#{files * ''}"
+      changed_files = `git status --porcelain`.gsub(/^\s*\S\s+/, '').lines
+      unless changed_files.empty?
+        warn "There are still modified files:\n#{changed_files * ''}"
         exit 1
       end
     end

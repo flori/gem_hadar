@@ -6,6 +6,8 @@ else
   include ::Config
 end
 require 'rake'
+require 'net/http'
+require 'uri'
 require 'tins/xt'
 require 'tins/secure_write'
 require 'rake/clean'
@@ -43,6 +45,16 @@ class GemHadar
 
   def has_to_be_set(name)
     fail "#{self.class}: #{name} has to be set for gem"
+  end
+
+  def assert_valid_link(orig_url)
+    url = orig_url
+    begin
+      response = Net::HTTP.get_response(URI.parse(url))
+      url = response['location']
+    end while response.is_a?(Net::HTTPRedirection)
+    response.is_a?(Net::HTTPOK) or
+      fail "#{orig_url.inspect} has to be a valid link"
   end
 
   dsl_accessor :name do
@@ -255,7 +267,7 @@ class GemHadar
       s.version     = ::Gem::Version.new(version)
       s.author      = author
       s.email       = email
-      s.homepage    = homepage
+      s.homepage    = assert_valid_link(homepage)
       s.summary     = summary
       s.description = description
 

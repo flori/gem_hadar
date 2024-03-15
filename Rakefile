@@ -7,10 +7,10 @@ GemHadar do
   module_type :class
   author      'Florian Frank'
   email       'flori@ping.de'
-  homepage    "http://github.com/flori/#{name}"
+  homepage    "https://github.com/flori/#{name}"
   summary     'Library for the development of Ruby Gems'
   description 'This library contains some useful functionality to support the development of Ruby Gems'
-  ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble', '.bundle', '.yardoc'
+  ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble', '.bundle', '.yardoc', 'tags'
   readme      'README.md'
 
   dependency  'tins', '~>1.0'

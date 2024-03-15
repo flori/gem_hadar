@@ -47,14 +47,15 @@ class GemHadar
     fail "#{self.class}: #{name} has to be set for gem"
   end
 
-  def assert_valid_link(orig_url)
+  def assert_valid_link(name, orig_url)
     url = orig_url
     begin
       response = Net::HTTP.get_response(URI.parse(url))
       url = response['location']
     end while response.is_a?(Net::HTTPRedirection)
     response.is_a?(Net::HTTPOK) or
-      fail "#{orig_url.inspect} has to be a valid link"
+      fail "#{orig_url.inspect} for #{name} has to be a valid link"
+    orig_url
   end
 
   dsl_accessor :name do
@@ -267,7 +268,7 @@ class GemHadar
       s.version     = ::Gem::Version.new(version)
       s.author      = author
       s.email       = email
-      s.homepage    = assert_valid_link(homepage)
+      s.homepage    = assert_valid_link(:homepage, homepage)
       s.summary     = summary
       s.description = description
 

@@ -48,6 +48,7 @@ class GemHadar
   end
 
   def assert_valid_link(name, orig_url)
+    developing and return orig_url
     url = orig_url
     begin
       response = Net::HTTP.get_response(URI.parse(url))
@@ -57,6 +58,8 @@ class GemHadar
       fail "#{orig_url.inspect} for #{name} has to be a valid link"
     orig_url
   end
+
+  dsl_accessor :developing, false
 
   dsl_accessor :name do
     has_to_be_set :name
@@ -610,19 +613,25 @@ EOT
     namespace :gem do
       path = "pkg/#{name_version}.gem"
       desc "Push gem file #{File.basename(path)} to rubygems"
-      task :push => :build do
-        if File.exist?(path)
-          if ask?("Do you really want to push #{path.inspect} to rubygems? "\
-            "(yes/NO) ", /\Ayes\z/i)
-          then
-            key = ENV['GEM_API_KEY'].full? { |k| "--key #{k} " }
-            sh "gem push #{key}#{path}"
+      if developing
+        task :push => :build do
+          puts "Skipping push to rubygems while developing mode is enabled."
+        end
+      else
+        task :push => :build do
+          if File.exist?(path)
+            if ask?("Do you really want to push #{path.inspect} to rubygems? "\
+                "(yes/NO) ", /\Ayes\z/i)
+              then
+              key = ENV['GEM_API_KEY'].full? { |k| "--key #{k} " }
+              sh "gem push #{key}#{path}"
+            else
+              exit 1
+            end
           else
+            warn "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
             exit 1
           end
-        else
-          warn "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
-          exit 1
         end
       end
     end

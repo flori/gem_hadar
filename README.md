@@ -44,7 +44,7 @@ GemHadar do
   title       "#{name.camelize} -- My library"
   licenses    << 'Apache-2.0'
 
-  dependency             'sinatra'
+  dependency             'sinatra', '~> 3.2'
   development_dependency 'rake'
   development_dependency 'rspec'
 end
@@ -54,7 +54,7 @@ Note that gem_hadar is ["self hosted"](Rakefile)
 
 ### Update version
 
-Use rake task or bump your VERSION file by hand.
+Use rake task (`rake version:bump:minor`) or bump your VERSION file by hand.
 
 ### Release
 

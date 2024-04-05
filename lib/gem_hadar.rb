@@ -361,7 +361,7 @@ EOT
 
   def gem_hadar_update_task
     namespace :gem_hadar do
-      desc 'Update gem_hadar a different version'
+      desc 'Update gem_hadar to a different version'
       task :update do
         answer = ask?("Which gem_hadar version? ", /^((?:\d+.){2}(?:\d+))$/)
         unless answer

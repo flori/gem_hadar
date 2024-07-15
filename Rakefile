@@ -13,6 +13,8 @@ GemHadar do
   ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble', '.bundle', '.yardoc', 'tags'
   readme      'README.md'
 
+  executables << 'gem_hadar'
+
   dependency  'tins', '~>1.0'
   dependency  'rake'
   dependency  'yard'

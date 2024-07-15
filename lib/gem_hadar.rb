@@ -137,6 +137,10 @@ class GemHadar
     FileList[File.join('lib/**/*.rb')] + FileList[File.join('ext/**/*.c')]
   end
 
+  dsl_accessor :yard_dir do
+    'yard'
+  end
+
   dsl_accessor :extensions do FileList['ext/**/extconf.rb'] end
 
   dsl_accessor :make do
@@ -696,23 +700,23 @@ EOT
   def yard_task
     defined? YARD or return
     namespace :yard do
-      yard_dir = Pathname.new('yard')
+      my_yard_dir = Pathname.new(yard_dir)
 
       desc 'Create yard documentation (including private)'
       task :private do
-        sh "yardoc -o #{yard_dir}"
+        sh "yardoc -o #{my_yard_dir}"
       end
 
       desc 'View the yard documentation'
       task :view do
-        index_file = yard_dir + 'index.html'
+        index_file = my_yard_dir + 'index.html'
         File.exist?(index_file)
         sh "open #{index_file}"
       end
 
       desc 'Clean the yard documentation'
       task :clean do
-        rm_rf yard_dir
+        rm_rf my_yard_dir
       end
 
       desc 'List all undocumented classes/modules/methods'

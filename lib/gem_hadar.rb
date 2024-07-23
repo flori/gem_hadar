@@ -358,7 +358,7 @@ EOT
     namespace :version do
       desc m = "Displaying the diff from HEAD to the last version tag"
       task :diff do
-        puts `git diff v#{version}..HEAD`
+        puts `git diff --color=always v#{version}..HEAD`
       end
     end
   end

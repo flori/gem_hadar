@@ -401,6 +401,7 @@ EOT
   end
 
   def package_task
+    clean 'pkg'
     Gem::PackageTask.new(gemspec) do |pkg|
       pkg.need_tar      = true
       pkg.package_files += gem_files

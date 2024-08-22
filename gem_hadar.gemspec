@@ -1,14 +1,14 @@
 # -*- encoding: utf-8 -*-
-# stub: gem_hadar 1.16.1 ruby lib
+# stub: gem_hadar 1.17.0 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "gem_hadar".freeze
-  s.version = "1.16.1".freeze
+  s.version = "1.17.0".freeze
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["Florian Frank".freeze]
-  s.date = "2024-07-23"
+  s.date = "2024-08-22"
   s.description = "This library contains some useful functionality to support the development of Ruby Gems".freeze
   s.email = "flori@ping.de".freeze
   s.executables = ["gem_hadar".freeze]
@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
 
   s.specification_version = 4
 
-  s.add_development_dependency(%q<gem_hadar>.freeze, ["~> 1.16.0".freeze])
+  s.add_development_dependency(%q<gem_hadar>.freeze, ["~> 1.16.1".freeze])
   s.add_runtime_dependency(%q<tins>.freeze, ["~> 1.0".freeze])
   s.add_runtime_dependency(%q<rake>.freeze, [">= 0".freeze])
   s.add_runtime_dependency(%q<yard>.freeze, [">= 0".freeze])

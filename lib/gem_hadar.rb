@@ -17,6 +17,7 @@ require 'set'
 require 'pathname'
 require 'erb'
 require 'gem_hadar/version'
+require 'term/ansicolor'
 require_maybe 'yard'
 require_maybe 'simplecov'
 require_maybe 'rubygems/package_task'
@@ -28,6 +29,8 @@ def GemHadar(&block)
 end
 
 class GemHadar
+  include Term::ANSIColor
+
   if defined?(::RbConfig)
     include ::RbConfig
   else
@@ -338,7 +341,7 @@ EOT
 
   def version_show_task
     namespace :version do
-      desc m = "Displaying the current version"
+      desc "Displaying the current version"
       task :show do
         require path_name
         dir = File.join('lib', path_name)
@@ -354,11 +357,28 @@ EOT
     end
   end
 
+  def versions
+    `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).map(&:chomp).map {
+      _1.sub(/\Av/, '')
+    }.sort_by(&:version)
+  end
+
   def version_diff_task
     namespace :version do
-      desc m = "Displaying the diff from HEAD to the last version tag"
+      desc "List all versions in order"
+      task :list do
+        system 'git fetch --tags'
+        $?.success? or exit $?.exitstatus
+        puts versions
+      end
+
+      desc "Displaying the diff from env var VERSION to the next version or HEAD"
       task :diff do
-        puts `git diff --color=always v#{version}..HEAD`
+        arg_version = ENV.fetch('VERSION', version).dup.prepend(?v)
+        my_versions = versions.map { _1.prepend(?v) } + %w[ HEAD ]
+        start_version, end_version = my_versions[my_versions.index(arg_version), 2]
+        puts color(172) {"Showing diff from version %s to %s:" % [ start_version, end_version ]}
+        puts `git diff --color=always #{start_version}..#{end_version}`
       end
     end
   end

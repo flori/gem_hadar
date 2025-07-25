@@ -15,18 +15,19 @@ require 'rake/testtask'
 require 'dslkit/polite'
 require 'set'
 require 'pathname'
-require 'erb'
-require 'gem_hadar/version'
+require 'ollama'
 require 'term/ansicolor'
 require_maybe 'yard'
 require_maybe 'simplecov'
 require_maybe 'rubygems/package_task'
 require_maybe 'rcov/rcovtask'
 require_maybe 'rspec/core/rake_task'
-
-def GemHadar(&block)
-  GemHadar.new(&block).create_all_tasks
+class GemHadar
 end
+require 'gem_hadar/version'
+require 'gem_hadar/setup'
+require 'gem_hadar/template_compiler'
+require 'gem_hadar/github'
 
 class GemHadar
   include Term::ANSIColor
@@ -48,18 +49,6 @@ class GemHadar
 
   def has_to_be_set(name)
     fail "#{self.class}: #{name} has to be set for gem"
-  end
-
-  def assert_valid_link(name, orig_url)
-    developing and return orig_url
-    url = orig_url
-    begin
-      response = Net::HTTP.get_response(URI.parse(url))
-      url = response['location']
-    end while response.is_a?(Net::HTTPRedirection)
-    response.is_a?(Net::HTTPOK) or
-      fail "#{orig_url.inspect} for #{name} has to be a valid link"
-    orig_url
   end
 
   dsl_accessor :developing, false
@@ -214,7 +203,7 @@ class GemHadar
   end
 
   def install_library(&block)
-    @install_library_block = lambda do
+    @install_library_block = -> do
       desc 'Install executable/library into site_ruby directories'
       task :install => :prepare_install, &block
     end
@@ -268,72 +257,22 @@ class GemHadar
     end
   end
 
-  def gem_files
-    (files.to_a - package_ignore_files.to_a)
-  end
-
-  def gemspec
-    Gem::Specification.new do |s|
-      s.name        = name
-      s.version     = ::Gem::Version.new(version)
-      s.author      = author
-      s.email       = email
-      s.homepage    = assert_valid_link(:homepage, homepage)
-      s.summary     = summary
-      s.description = description
-
-      gem_files.full? { |f| s.files = Array(f) }
-      test_files.full? { |t| s.test_files = Array(t) }
-      extensions.full? { |e| s.extensions = Array(e) }
-      bindir.full? { |b| s.bindir = b }
-      executables.full? { |e| s.executables = Array(e) }
-      licenses.full? { |l| s.licenses = Array(licenses) }
-      post_install_message.full? { |m| s.post_install_message = m }
-
-      required_ruby_version.full? { |v| s.required_ruby_version = v }
-      s.add_development_dependency('gem_hadar', "~> #{VERSION[/\A\d+\.\d+/, 0]}")
-      for d in @development_dependencies
-        s.add_development_dependency(*d)
-      end
-      for d in @dependencies
-        if s.respond_to?(:add_runtime_dependency)
-          s.add_runtime_dependency(*d)
-        else
-          s.add_dependency(*d)
-        end
-      end
-
-      require_paths.full? { |r| s.require_paths = Array(r) }
-
-      if title
-        s.rdoc_options << '--title' << title
-      else
-        s.rdoc_options << '--title' << "#{name.camelize} - #{summary}"
-      end
-      if readme
-        s.rdoc_options << '--main' << readme
-        s.extra_rdoc_files << readme
-      end
-      doc_files.full? { |df| s.extra_rdoc_files.concat Array(df) }
-    end
-  end
-
   def version_task
     desc m = "Writing version information for #{name}-#{version}"
     task :version do
       puts m
       mkdir_p dir = File.join('lib', path_name)
       secure_write(File.join(dir, 'version.rb')) do |v|
-        v.puts <<EOT
-#{module_type} #{path_module}
-  # #{path_module} version
-  VERSION         = '#{version}'
-  VERSION_ARRAY   = VERSION.split('.').map(&:to_i) # :nodoc:
-  VERSION_MAJOR   = VERSION_ARRAY[0] # :nodoc:
-  VERSION_MINOR   = VERSION_ARRAY[1] # :nodoc:
-  VERSION_BUILD   = VERSION_ARRAY[2] # :nodoc:
-end
-EOT
+        v.puts <<~EOT
+          #{module_type} #{path_module}
+            # #{path_module} version
+            VERSION         = '#{version}'
+            VERSION_ARRAY   = VERSION.split('.').map(&:to_i) # :nodoc:
+            VERSION_MAJOR   = VERSION_ARRAY[0] # :nodoc:
+            VERSION_MINOR   = VERSION_ARRAY[1] # :nodoc:
+            VERSION_BUILD   = VERSION_ARRAY[2] # :nodoc:
+          end
+        EOT
         version_epilogue.full? { |ve| v.puts ve }
       end
     end
@@ -357,10 +296,36 @@ EOT
     end
   end
 
-  def versions
-    `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).map(&:chomp).map {
-      _1.sub(/\Av/, '')
-    }.sort_by(&:version)
+  def version_log_diff(to_version: 'HEAD', from_version: nil)
+    if to_version == 'HEAD'
+      if from_version.blank?
+        from_version = versions.last
+      else
+        unless versions.find { |v| v == from_version }
+          fail "Could not find #{from_version.inspect}."
+        end
+      end
+      `git log -p #{version_identifier(from_version)}..HEAD`
+    else
+      unless versions.find { |v| v == to_version }
+        fail "Could not find #{to_version.inspect}."
+      end
+      if from_version.blank?
+        from_version = versions.each_cons(2).find do |previous_version, v|
+          if v == to_version
+            break previous_version
+          end
+        end
+        unless from_version
+          fail "Could not find version before #{to_version.inspect}."
+        end
+      else
+        unless versions.find { |v| v == from_version }
+          fail "Could not find #{from_version.inspect}."
+        end
+      end
+      `git log -p #{version_identifier(from_version)}..#{version_identifier(to_version)}`
+    end
   end
 
   def version_diff_task
@@ -374,8 +339,8 @@ EOT
 
       desc "Displaying the diff from env var VERSION to the next version or HEAD"
       task :diff do
-        arg_version = ENV.fetch('VERSION', version).dup.prepend(?v)
-        my_versions = versions.map { _1.prepend(?v) } + %w[ HEAD ]
+        arg_version = version_identifier(ENV.fetch('VERSION', version))
+        my_versions = versions.map { version_identifier(_1) } + %w[ HEAD ]
         start_version, end_version = my_versions[my_versions.index(arg_version), 2]
         puts color(172) {"Showing diff from version %s to %s:" % [ start_version, end_version ]}
         puts `git diff --color=always #{start_version}..#{end_version}`
@@ -489,41 +454,6 @@ EOT
     end
   end
 
-  def self.start_simplecov
-    defined? SimpleCov or return
-    filter = "#{File.basename(File.dirname(caller.first))}/"
-    SimpleCov.start do
-      add_filter filter
-    end
-  end
-
-  def write_ignore_file
-    secure_write('.gitignore') do |output|
-      output.puts(ignore.sort)
-    end
-  end
-
-  def write_gemfile
-     default_gemfile =<<EOT
-# vim: set filetype=ruby et sw=2 ts=2:
-
-source 'https://rubygems.org'
-
-gemspec
-EOT
-    current_gemfile = File.exist?('Gemfile') && File.read('Gemfile')
-    case current_gemfile
-    when false
-      secure_write('Gemfile') do |output|
-        output.write default_gemfile
-      end
-    when default_gemfile
-      ;;
-    else
-      warn "INFO: Current Gemfile differs from default Gemfile."
-    end
-  end
-
   def version_bump_task
     namespace :version do
       namespace :bump do
@@ -557,7 +487,7 @@ EOT
       task :tag do
         force = ENV['FORCE'].to_i == 1
         begin
-          sh "git tag -a -m 'Version #{version}' #{'-f' if force} v#{version}"
+          sh "git tag -a -m 'Version #{version}' #{'-f' if force} #{version_identifier(version)}"
         rescue RuntimeError
           if `git diff v#{version}..HEAD`.empty?
             puts "Version #{version} is already tagged, but it's no different"
@@ -577,12 +507,6 @@ EOT
 
   def git_remote
     ENV.fetch('GIT_REMOTE', 'origin').split(/\s+/).first
-  end
-
-  def git_remotes
-    remotes = ENV['GIT_REMOTE'].full?(:split, /\s+/)
-    remotes or remotes = `git remote`.lines.map(&:chomp)
-    remotes
   end
 
   def master_prepare_task
@@ -671,12 +595,106 @@ EOT
     end
   end
 
+  def create_body
+    base_url = ENV['OLLAMA_URL']
+    if base_url.blank? && host = ENV['OLLAMA_HOST'].full?
+      base_url = 'http://%s' % host
+    end
+    base_url.present? or return
+    log_diff = version_log_diff(to_version: version)
+    model    = ENV.fetch('OLLAMA_MODEL', 'llama3.1')
+    ollama   = Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
+    system = <<~EOT
+      You are a Ruby programmer generating changelog messages in markdown
+      format for new releases, so users can see what has changed. Remember you
+      are not a chatbot of any kind.
+    EOT
+    prompt = (<<~EOT) % { name:, version:, log_diff: }
+      Output the content of a changelog for the new release of %{name} %{version}
+
+      **Strictly** follow these guidelines:
+
+        - Use bullet points in markdown format (`-`) to list significant changes.
+        - Exclude trivial updates such as:
+          * Version number increments
+          * Dependency version bumps (unless they resolve critical issues)
+          * Minor code style adjustments
+          * Internal documentation tweaks
+        - Include only verified and substantial changes that impact
+          functionality, performance, or user experience.
+        - If unsure about a change's significance, omit it from the output.
+        - Avoid adding any comments or notes; keep the output purely factual.
+
+      These are the log messages including patches for the new release:
+
+      %{log_diff}
+    EOT
+    options = ENV['OLLAMA_OPTIONS'].full? { |o| JSON.parse(o) } || {}
+    options |= { "temperature" => 0, "top_p" => 1, "min_p" => 0.1 }
+    ollama.generate(model:, system:, prompt:, options:, stream: false, think: false).response
+  end
+
+  def edit_temp_file(content)
+    editor = ENV.fetch('EDITOR', `which vi`.chomp)
+    unless File.exist?(editor)
+      warn "Can't find EDITOR. => Returning."
+      return
+    end
+    temp_file = Tempfile.new('changelog')
+    temp_file.write(content)
+    temp_file.close
+
+    unless system("#{editor} #{temp_file.path}")
+      warn "#{editor} returned #{$?.exitstatus} => Returning."
+      return
+    end
+
+    File.read(temp_file.path)
+  ensure
+    temp_file&.close&.unlink
+  end
+
+  def github_release_task
+    namespace :github do
+      unless github_api_token = ENV['GITHUB_API_TOKEN'].full?
+        warn "GITHUB_API_TOKEN not set. => Skipping github release task."
+        task :release
+        return
+      end
+      desc "Create a new GitHub release for the current version with a changelog"
+      task :release do
+        yes = ask?(
+          "Do you want to publish a release message on github? (y/n, %{default}) ",
+          /\Ay/i, default: ENV['GITHUB_RELEASE_ENABLED']
+        )
+        unless yes
+            warn "Skipping publication of a github release message."
+            next
+        end
+        if %r(\A/*(?<owner>[^/]+)/(?<repo>[^/.]+)) =~ github_remote_url&.path
+          rc = GitHub::ReleaseCreator.new(owner:, repo:, token: github_api_token)
+          tag_name         = version_identifier(version)
+          target_commitish = `git rev-parse #{tag_name.inspect}`.chomp
+          body             = edit_temp_file(create_body)
+          if body.present?
+            rc.perform(tag_name:, target_commitish:, body:)
+          else
+            warn "Skipping creation of github release message."
+          end
+        else
+          warn "Could not derive github remote url from git remotes. => Skipping github release task."
+        end
+      end
+    end
+  end
+
   def push_task
     master_prepare_task
     version_push_task
     master_push_task
     gem_push_task
     git_remotes_task
+    github_release_task
     task :modified do
       changed_files = `git status --porcelain`.gsub(/^\s*\S\s+/, '').lines
       unless changed_files.empty?
@@ -685,7 +703,7 @@ EOT
       end
     end
     desc "Push master and version #{version} all git remotes: #{git_remotes * ' '}"
-    task :push => %i[ modified build master:push version:push gem:push ]
+    task :push => %i[ modified build master:push version:push gem:push github:release ]
   end
 
   def compile_task
@@ -709,11 +727,11 @@ EOT
     desc 'Create .rvmrc file'
     task :rvm do
       secure_write('.rvmrc') do |output|
-        output.write <<EOT
-rvm use #{rvm.use}
-rvm gemset create #{rvm.gemset}
-rvm gemset use #{rvm.gemset}
-EOT
+        output.write <<~EOT
+          rvm use #{rvm.use}
+          rvm gemset create #{rvm.gemset}
+          rvm gemset use #{rvm.gemset}
+        EOT
       end
     end
   end
@@ -750,14 +768,10 @@ EOT
     task :yard => %i[ yard:private yard:view ]
   end
 
-  def ask?(prompt, pattern)
-    STDOUT.print prompt
-    answer = STDIN.gets.chomp
-    if answer =~ pattern
-      $~
-    end
-  end
-
+  # The create_all_tasks method sets up and registers all the Rake tasks for
+  # the gem project.
+  #
+  # @return [GemHadar] the instance of GemHadar
   def create_all_tasks
     default_task
     build_task
@@ -791,77 +805,242 @@ EOT
     self
   end
 
-  class TemplateCompiler
-    include Tins::BlockSelf
-    include Tins::MethodMissingDelegator::DelegatorModule
-
-    def initialize(&block)
-      super block_self(&block)
-      @values = {}
-      instance_eval(&block)
+  # The write_ignore_file method writes the current ignore_files configuration
+  # to a .gitignore file in the project root directory.
+  def write_ignore_file
+    secure_write('.gitignore') do |output|
+      output.puts(ignore.sort)
     end
+  end
 
-    def compile(src, dst)
-      template = File.read(src)
-      File.open(dst, 'w') do |output|
-        erb = ERB.new(template, nil, '-')
-        erb.filename = src.to_s
-        output.write erb.result binding
+  # The write_gemfile method creates and writes the default Gemfile content if
+  # it doesn't exist. If a custom Gemfile exists, it only displays a warning.
+  def write_gemfile
+    default_gemfile =<<~EOT
+      # vim: set filetype=ruby et sw=2 ts=2:
+
+      source 'https://rubygems.org'
+
+      gemspec
+    EOT
+    current_gemfile = File.exist?('Gemfile') && File.read('Gemfile')
+    case current_gemfile
+    when false
+      secure_write('Gemfile') do |output|
+        output.write default_gemfile
       end
+    when default_gemfile
+      ;;
+    else
+      warn "INFO: Current Gemfile differs from default Gemfile."
     end
+  end
 
-    def method_missing(id, *a, &b)
-      if a.empty? && id && @values.key?(id)
-        @values[id]
-      elsif a.size == 1
-        @values[id] = a.first
+  # The assert_valid_link method verifies that the provided URL is valid by
+  # checking if it returns an HTTP OK status after following redirects, unless
+  # project is still `developing`.
+  #
+  # @param name [String] the name associated with the link being validated
+  # @param orig_url [String] the URL to validate
+  #
+  # @return [String] the original URL if validation succeeds
+  #
+  # @raise [ArgumentError] if the final response is not an HTTP OK status after
+  # following redirects
+  def assert_valid_link(name, orig_url)
+    developing and return orig_url
+    url = orig_url
+    begin
+      response = Net::HTTP.get_response(URI.parse(url))
+      url = response['location']
+    end while response.is_a?(Net::HTTPRedirection)
+    response.is_a?(Net::HTTPOK) or
+      fail "#{orig_url.inspect} for #{name} has to be a valid link"
+    orig_url
+  end
+
+  # The gemspec method creates and returns a new Gem::Specification object
+  # that defines the metadata and dependencies for the gem package.
+  #
+  # @return [Gem::Specification] a fully configured Gem specification object
+  def gemspec
+    Gem::Specification.new do |s|
+      s.name        = name
+      s.version     = ::Gem::Version.new(version)
+      s.author      = author
+      s.email       = email
+      s.homepage    = assert_valid_link(:homepage, homepage)
+      s.summary     = summary
+      s.description = description
+
+      gem_files.full? { |f| s.files = Array(f) }
+      test_files.full? { |t| s.test_files = Array(t) }
+      extensions.full? { |e| s.extensions = Array(e) }
+      bindir.full? { |b| s.bindir = b }
+      executables.full? { |e| s.executables = Array(e) }
+      licenses.full? { |l| s.licenses = Array(licenses) }
+      post_install_message.full? { |m| s.post_install_message = m }
+
+      required_ruby_version.full? { |v| s.required_ruby_version = v }
+      s.add_development_dependency('gem_hadar', "~> #{VERSION[/\A\d+\.\d+/, 0]}")
+      for d in @development_dependencies
+        s.add_development_dependency(*d)
+      end
+      for d in @dependencies
+        if s.respond_to?(:add_runtime_dependency)
+          s.add_runtime_dependency(*d)
+        else
+          s.add_dependency(*d)
+        end
+      end
+
+      require_paths.full? { |r| s.require_paths = Array(r) }
+
+      if title
+        s.rdoc_options << '--title' << title
       else
-        super
+        s.rdoc_options << '--title' << "#{name.camelize} - #{summary}"
       end
+      if readme
+        s.rdoc_options << '--main' << readme
+        s.extra_rdoc_files << readme
+      end
+      doc_files.full? { |df| s.extra_rdoc_files.concat Array(df) }
     end
   end
 
-  class Setup
-    include FileUtils
+  # The warn method displays warning messages using orange colored output.
+  #
+  # @param msgs [Array<String>] the array of message strings to display
+  def warn(*msgs)
+    msgs.map! { |m| color(208) { m } }
+    super(*msgs, uplevel: 1)
+  end
 
-    def perform
-      mkdir_p 'lib'
-      unless File.exist?('VERSION')
-        File.open('VERSION', 'w') do |output|
-          output.puts '0.0.0'
+  # The fail method formats and displays failure messages using red colored
+  # output.
+  #
+  # @param args [Array] the array of arguments to be formatted and passed to super
+  def fail(*args)
+    args.map! do |a|
+      a.respond_to?(:to_str) ? color(196) { a.to_str } : a
+    end
+    super(*args)
+  end
+  def fail(*args)
+    args.map! do |a|
+      a.respond_to?(:to_str) ? color(196) { a.to_str } : a
+    end
+    super(*args)
+  end
+
+  # The git_remotes method retrieves the list of remote repositories configured
+  # for the current Git project.
+  #
+  # It first attempts to read the remotes from the ENV['GIT_REMOTE']
+  # environment variable, splitting it by whitespace. If this is not available,
+  # it falls back to querying the local Git repository using `git remote`.
+  #
+  # @return [ Array<String> ] an array of remote names
+  def git_remotes
+    remotes = ENV['GIT_REMOTE'].full?(:split, /\s+/)
+    remotes or remotes = `git remote`.lines.map(&:chomp)
+    remotes
+  end
+
+  # The ask? method prompts the user with a message and reads their input It
+  # returns a MatchData object if the input matches the provided pattern.
+  #
+  # @param prompt [ String ] the message to display to the user
+  # @param pattern [ Regexp ] the regular expression to match against the input
+  #
+  # @return [ MatchData, nil ] the result of the pattern match or nil if no match
+  def ask?(prompt, pattern, default: nil)
+    if prompt.include?('%{default}') && default.present?
+       prompt = prompt % { default: "default is #{default.inspect}" }
+    end
+    STDOUT.print prompt
+    answer = STDIN.gets.chomp
+    default.present? && answer.blank? and answer = default
+    if answer =~ pattern
+      $~
+    end
+  end
+
+  # The gem_files method returns an array of files that are included in the gem
+  # package.
+  #
+  # It calculates this by subtracting the files listed in package_ignore_files
+  # from the list of all files.
+  #
+  # @return [ Array<String> ] the list of files to include in the gem package
+  def gem_files
+    (files.to_a - package_ignore_files.to_a)
+  end
+
+  # The versions method retrieves and processes the list of git tags that match
+  # semantic versioning patterns.
+  #
+  # It executes `git tag` to get all available tags, filters them using a
+  # regular expression to identify valid version strings, removes any 'v'
+  # prefix from each version string, trims whitespace, and sorts the resulting
+  # array based on semantic versioning order.
+  #
+  # @return [ Array<String> ] an array of version strings sorted in ascending
+  # order according to semantic versioning rules.
+  def versions
+    @versions ||= `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).map(&:chomp).map {
+      _1.sub(/\Av/, '')
+    }.sort_by(&:version)
+  end
+
+  # The version_identifier method prepends a 'v' prefix to the given version
+  # string.
+  #
+  # @param version [String] the version string to modify
+  # @return [String] the modified version string with a 'v' prefix
+  def version_identifier(version)
+    version.dup.prepend ?v
+  end
+
+  # The github_remote_url method retrieves and parses the GitHub remote URL
+  # from the local Git configuration.
+  #
+  # It executes `git remote -v` to get all remote configurations, extracts the
+  # push URLs, processes them to construct valid URIs, and returns the first
+  # URI pointing to GitHub.com.
+  #
+  # @return [URI, nil] The parsed GitHub remote URI or nil if not found.
+  def github_remote_url
+    if remotes = `git remote -v`
+      remotes_urls = remotes.scan(/^(\S+)\s+(\S+)\s+\(push\)/)
+      remotes_uris = remotes_urls.map do |name, url|
+        if %r(\A(?<scheme>[^@]+)@(?<hostname>[A-Za-z0-9.]+):(?:\d*)(?<path>.*)) =~ url
+          path = ?/ + path unless path.start_with? ?/
+          url = 'ssh://%s@%s%s' % [ scheme, hostname, path ] # approximate correct URIs
         end
+        URI.parse(url)
       end
-      unless File.exist?('Rakefile')
-        File.open('Rakefile', 'w') do |output|
-          output.puts <<~EOT
-            # vim: set filetype=ruby et sw=2 ts=2:
+      remotes_uris.find { |uri| uri.hostname == 'github.com' }
+    end
+  end
 
-            require 'gem_hadar'
-
-            GemHadar do
-              #developing true
-              #name       'TODO'
-              module_type :class
-              #author     'TODO'
-              #email      'todo@example.com'
-              #homepage   "https://github.com/TODO/NAME"
-              #summary    'TODO'
-              description 'TODO'
-              test_dir    'spec'
-              ignore      '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble', '.bundle', '.yardoc', 'tags'
-              readme      'README.md'
-
-              #executables << 'bin/TODO'
-
-              #dependency  'TODO', '~>1.2.3'
-
-              #licenses << 'TODO
-            end
-          EOT
-        end
+  class << self
+    # The start_simplecov method initializes SimpleCov and configures it to
+    # ignore coverage data from the directory containing the caller. This can be
+    # called from a test or spec helper.
+    def start_simplecov
+      defined? SimpleCov or return
+      filter = "#{File.basename(File.dirname(caller.first))}/"
+      SimpleCov.start do
+        add_filter filter
       end
     end
   end
+end
+
+def GemHadar(&block)
+  GemHadar.new(&block).create_all_tasks
 end
 
 def template(pathname, &block)

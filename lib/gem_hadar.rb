@@ -674,7 +674,7 @@ class GemHadar
         if %r(\A/*(?<owner>[^/]+)/(?<repo>[^/.]+)) =~ github_remote_url&.path
           rc = GitHub::ReleaseCreator.new(owner:, repo:, token: github_api_token)
           tag_name         = version_tag(version)
-          target_commitish = `git rev-parse #{tag_name.inspect}`.chomp
+          target_commitish = `git show -s --format=%H #{tag_name.inspect}^{commit}`.chomp
           body             = edit_temp_file(create_body)
           if body.present?
             begin

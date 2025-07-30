@@ -18,13 +18,14 @@ class GemHadar::GitHub::ReleaseCreator
   end
 
   def perform(tag_name:, target_commitish:, body:, name: tag_name, draft: false, prerelease: false)
-    uri = URI("#{self.class.github_api_url}/repos/#{@owner}/#{@repo}/releases")
+    uri = URI("#{self.class.github_api_url}/repos/#@owner/#@repo/releases")
 
     headers = {
-      "Accept" => "application/vnd.github+json",
-      "Authorization" => "Bearer #{@token}",
-      "Content-Type" => "application/json",
-      "X-GitHub-Api-Version" => @api_version
+      "Accept"               => "application/vnd.github+json",
+      "Authorization"        => "Bearer #@token",
+      "Content-Type"         => "application/json",
+      "X-GitHub-Api-Version" => @api_version,
+      "User-Agent"           => [ GemHadar.name, GemHadar::VERSION ] * ?/,
     }
 
     data = {
@@ -36,13 +37,7 @@ class GemHadar::GitHub::ReleaseCreator
       prerelease:,
     }.compact
 
-    req = Net::HTTP::Post.new(uri.request_uri, headers)
-    req.body = JSON(data)
-
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
-      http.request(req)
-    end
-
+    response = Net::HTTP.post(uri, JSON(data), headers)
     case response
     when Net::HTTPSuccess
       JSON.parse(response.body, object_class: JSON::GenericObject)

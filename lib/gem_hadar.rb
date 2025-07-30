@@ -664,7 +664,7 @@ class GemHadar
       desc "Create a new GitHub release for the current version with a changelog"
       task :release do
         yes = ask?(
-          "Do you want to publish a release message on github? (y/n, %{default}) ",
+          "Do you want to publish a release message on github? (y/n%{default}) ",
           /\Ay/i, default: ENV['GITHUB_RELEASE_ENABLED']
         )
         unless yes
@@ -956,8 +956,12 @@ class GemHadar
   #
   # @return [ MatchData, nil ] the result of the pattern match or nil if no match
   def ask?(prompt, pattern, default: nil)
-    if prompt.include?('%{default}') && default.present?
-       prompt = prompt % { default: "default is #{default.inspect}" }
+    if prompt.include?('%{default}')
+      if default.present?
+        prompt = prompt % { default: ", default is #{default.inspect}" }
+      else
+        prompt = prompt % { default: '' }
+      end
     end
     STDOUT.print prompt
     answer = STDIN.gets.chomp

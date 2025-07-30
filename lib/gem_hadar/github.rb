@@ -44,10 +44,15 @@ class GemHadar::GitHub::ReleaseCreator
 
     case response
     when Net::HTTPSuccess
-      puts "Release created successfully!"
-      response.body
+      JSON.parse(response.body, object_class: JSON::GenericObject)
     else
-      error_msg = "Failed to create release. Status: #{response.code}"
+      error_data =
+        begin
+          JSON.pretty_generate(JSON.parse(response.body))
+        rescue
+          response.body
+        end
+      error_msg = "Failed to create release. Status: #{response.code}\n\n#{error_data}"
       raise error_msg
     end
   rescue => e

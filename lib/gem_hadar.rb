@@ -677,7 +677,8 @@ class GemHadar
           target_commitish = `git rev-parse #{tag_name.inspect}`.chomp
           body             = edit_temp_file(create_body)
           if body.present?
-            rc.perform(tag_name:, target_commitish:, body:)
+            response = rc.perform(tag_name:, target_commitish:, body:)
+            puts "Release created successfully! See #{response['html_url']}"
           else
             warn "Skipping creation of github release message."
           end

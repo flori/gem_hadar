@@ -23,6 +23,7 @@ class GemHadar::GitHub::ReleaseCreator
     headers = {
       "Accept" => "application/vnd.github+json",
       "Authorization" => "Bearer #{@token}",
+      "Content-Type" => "application/json",
       "X-GitHub-Api-Version" => @api_version
     }
 
@@ -52,11 +53,7 @@ class GemHadar::GitHub::ReleaseCreator
         rescue
           response.body
         end
-      error_msg = "Failed to create release. Status: #{response.code}\n\n#{error_data}"
-      raise error_msg
+      raise "Failed to create release. Status: #{response.code}\n\n#{error_data}"
     end
-  rescue => e
-    warn "Error creating release: #{e.message}"
-    nil
   end
 end

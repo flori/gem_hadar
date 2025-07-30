@@ -152,11 +152,10 @@ class GemHadar
   dsl_accessor :path_module do path_name.camelize end
 
   dsl_accessor :version do
-    begin
-      File.read('VERSION').chomp
-    rescue Errno::ENOENT
-      has_to_be_set :version
-    end
+    v = ENV['VERSION'].full? and next v
+    File.read('VERSION').chomp
+  rescue Errno::ENOENT
+    has_to_be_set :version
   end
 
   dsl_accessor :version_epilogue
@@ -305,7 +304,7 @@ class GemHadar
           fail "Could not find #{from_version.inspect}."
         end
       end
-      `git log -p #{version_identifier(from_version)}..HEAD`
+      `git log -p #{version_tag(from_version)}..HEAD`
     else
       unless versions.find { |v| v == to_version }
         fail "Could not find #{to_version.inspect}."
@@ -324,7 +323,7 @@ class GemHadar
           fail "Could not find #{from_version.inspect}."
         end
       end
-      `git log -p #{version_identifier(from_version)}..#{version_identifier(to_version)}`
+      `git log -p #{version_tag(from_version)}..#{version_tag(to_version)}`
     end
   end
 
@@ -339,10 +338,11 @@ class GemHadar
 
       desc "Displaying the diff from env var VERSION to the next version or HEAD"
       task :diff do
-        arg_version = version_identifier(ENV.fetch('VERSION', version))
-        my_versions = versions.map { version_identifier(_1) } + %w[ HEAD ]
-        start_version, end_version = my_versions[my_versions.index(arg_version), 2]
-        puts color(172) {"Showing diff from version %s to %s:" % [ start_version, end_version ]}
+        version_tags = versions.map { version_tag(_1) } + %w[ HEAD ]
+        found_version_tag = version_tags.index(version_tag(version))
+        found_version_tag.nil? and fail "cannot find version tag #{version_tag(version)}"
+        start_version, end_version = version_tags[found_version_tag, 2]
+        puts color(172) { "Showing diff from version %s to %s:" % [ start_version, end_version ] }
         puts `git diff --color=always #{start_version}..#{end_version}`
       end
     end
@@ -487,7 +487,7 @@ class GemHadar
       task :tag do
         force = ENV['FORCE'].to_i == 1
         begin
-          sh "git tag -a -m 'Version #{version}' #{'-f' if force} #{version_identifier(version)}"
+          sh "git tag -a -m 'Version #{version}' #{'-f' if force} #{version_tag(version)}"
         rescue RuntimeError
           if `git diff v#{version}..HEAD`.empty?
             puts "Version #{version} is already tagged, but it's no different"
@@ -673,7 +673,7 @@ class GemHadar
         end
         if %r(\A/*(?<owner>[^/]+)/(?<repo>[^/.]+)) =~ github_remote_url&.path
           rc = GitHub::ReleaseCreator.new(owner:, repo:, token: github_api_token)
-          tag_name         = version_identifier(version)
+          tag_name         = version_tag(version)
           target_commitish = `git rev-parse #{tag_name.inspect}`.chomp
           body             = edit_temp_file(create_body)
           if body.present?
@@ -1003,12 +1003,12 @@ class GemHadar
     }.sort_by(&:version)
   end
 
-  # The version_identifier method prepends a 'v' prefix to the given version
+  # The version_tag method prepends a 'v' prefix to the given version
   # string.
   #
   # @param version [String] the version string to modify
   # @return [String] the modified version string with a 'v' prefix
-  def version_identifier(version)
+  def version_tag(version)
     version.dup.prepend ?v
   end
 

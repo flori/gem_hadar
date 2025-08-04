@@ -595,7 +595,7 @@ class GemHadar
     end
   end
 
-  def create_body
+  def create_git_release_body
     base_url = ENV['OLLAMA_URL']
     if base_url.blank? && host = ENV['OLLAMA_HOST'].full?
       base_url = 'http://%s' % host
@@ -675,7 +675,7 @@ class GemHadar
           rc = GitHub::ReleaseCreator.new(owner:, repo:, token: github_api_token)
           tag_name         = version_tag(version)
           target_commitish = `git show -s --format=%H #{tag_name.inspect}^{commit}`.chomp
-          body             = edit_temp_file(create_body)
+          body             = edit_temp_file(create_git_release_body)
           if body.present?
             begin
               response = rc.perform(tag_name:, target_commitish:, body:)

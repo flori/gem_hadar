@@ -25,12 +25,16 @@ require_maybe 'rspec/core/rake_task'
 class GemHadar
 end
 require 'gem_hadar/version'
+require 'gem_hadar/utils'
 require 'gem_hadar/setup'
 require 'gem_hadar/template_compiler'
 require 'gem_hadar/github'
+require 'gem_hadar/prompt_template'
 
 class GemHadar
   include Term::ANSIColor
+  include GemHadar::Utils
+  include GemHadar::PromptTemplate
 
   if defined?(::RbConfig)
     include ::RbConfig
@@ -338,10 +342,7 @@ class GemHadar
 
       desc "Displaying the diff from env var VERSION to the next version or HEAD"
       task :diff do
-        version_tags = versions.map { version_tag(_1) } + %w[ HEAD ]
-        found_version_tag = version_tags.index(version_tag(version))
-        found_version_tag.nil? and fail "cannot find version tag #{version_tag(version)}"
-        start_version, end_version = version_tags[found_version_tag, 2]
+        start_version, end_version = determine_version_range
         puts color(172) { "Showing diff from version %s to %s:" % [ start_version, end_version ] }
         puts `git diff --color=always #{start_version}..#{end_version}`
       end
@@ -596,42 +597,10 @@ class GemHadar
   end
 
   def create_git_release_body
-    base_url = ENV['OLLAMA_URL']
-    if base_url.blank? && host = ENV['OLLAMA_HOST'].full?
-      base_url = 'http://%s' % host
-    end
-    base_url.present? or return
     log_diff = version_log_diff(to_version: version)
-    model    = ENV.fetch('OLLAMA_MODEL', 'llama3.1')
-    ollama   = Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
-    system = <<~EOT
-      You are a Ruby programmer generating changelog messages in markdown
-      format for new releases, so users can see what has changed. Remember you
-      are not a chatbot of any kind.
-    EOT
-    prompt = (<<~EOT) % { name:, version:, log_diff: }
-      Output the content of a changelog for the new release of %{name} %{version}
-
-      **Strictly** follow these guidelines:
-
-        - Use bullet points in markdown format (`-`) to list significant changes.
-        - Exclude trivial updates such as:
-          * Version number increments
-          * Dependency version bumps (unless they resolve critical issues)
-          * Minor code style adjustments
-          * Internal documentation tweaks
-        - Include only verified and substantial changes that impact
-          functionality, performance, or user experience.
-        - If unsure about a change's significance, omit it from the output.
-        - Avoid adding any comments or notes; keep the output purely factual.
-
-      These are the log messages including patches for the new release:
-
-      %{log_diff}
-    EOT
-    options = ENV['OLLAMA_OPTIONS'].full? { |o| JSON.parse(o) } || {}
-    options |= { "temperature" => 0, "top_p" => 1, "min_p" => 0.1 }
-    ollama.generate(model:, system:, prompt:, options:, stream: false, think: false).response
+    system   = xdg_config('release_system_prompt.txt', default_git_release_system_prompt)
+    prompt   = xdg_config('release_prompt.txt', default_git_release_prompt) % { name:, version:, log_diff: }
+    ollama_generate(system:, prompt:)
   end
 
   def edit_temp_file(content)
@@ -812,6 +781,35 @@ class GemHadar
     self
   end
 
+  def ollama_generate(system:, prompt:)
+    base_url = ENV['OLLAMA_URL']
+    if base_url.blank? && host = ENV['OLLAMA_HOST'].full?
+      base_url = 'http://%s' % host
+    end
+    base_url.present? or return
+    ollama   = Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
+    model    = ENV.fetch('OLLAMA_MODEL', 'llama3.1')
+    options  = ENV['OLLAMA_OPTIONS'].full? { |o| JSON.parse(o) } || {}
+    options |= { "temperature" => 0, "top_p" => 1, "min_p" => 0.1 }
+    ollama.generate(model:, system:, prompt:, options:, stream: false, think: false).response
+  end
+
+  # Determine the start and end versions for diff comparison.
+  #
+  # If the VERSION env var is set, it will be used as the starting version tag.
+  # Otherwise, it defaults to the current commit's version or the latest tag.
+  #
+  # @return [Array(String, String)] A fixed-size array containing:
+  #   - The start version (e.g., '1.2.3') from which changes are compared.
+  #   - The end version (e.g., '1.2.4' or 'HEAD') up to which changes are compared.
+  def determine_version_range
+    version_tags = versions.map { version_tag(_1) } + %w[ HEAD ]
+    found_version_tag = version_tags.index(version_tag(version))
+    found_version_tag.nil? and fail "cannot find version tag #{version_tag(version)}"
+    start_version, end_version = version_tags[found_version_tag, 2]
+    return start_version, end_version
+  end
+
   # The write_ignore_file method writes the current ignore_files configuration
   # to a .gitignore file in the project root directory.
   def write_ignore_file
@@ -934,12 +932,6 @@ class GemHadar
     end
     super(*args)
   end
-  def fail(*args)
-    args.map! do |a|
-      a.respond_to?(:to_str) ? color(196) { a.to_str } : a
-    end
-    super(*args)
-  end
 
   # The git_remotes method retrieves the list of remote repositories configured
   # for the current Git project.
@@ -1006,12 +998,20 @@ class GemHadar
   end
 
   # The version_tag method prepends a 'v' prefix to the given version
-  # string.
+  # string, unless it's HEAD.
   #
   # @param version [String] the version string to modify
   # @return [String] the modified version string with a 'v' prefix
   def version_tag(version)
-    version.dup.prepend ?v
+    if version != 'HEAD'
+      version.dup.prepend ?v
+    else
+      version.dup
+    end
+  end
+
+  def version_untag(version_tag)
+    version.sub(/\Av/, '')
   end
 
   # The github_remote_url method retrieves and parses the GitHub remote URL

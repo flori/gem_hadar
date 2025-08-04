@@ -460,23 +460,40 @@ class GemHadar
       namespace :bump do
         desc 'Bump major version'
         task :major do
-          version = File.read('VERSION').chomp.version
-          version.bump(:major)
-          secure_write('VERSION') { |v| v.puts version }
+          version_bump_to(:major)
         end
 
         desc 'Bump minor version'
         task :minor do
-          version = File.read('VERSION').chomp.version
-          version.bump(:minor)
-          secure_write('VERSION') { |v| v.puts version }
+          version_bump_to(:minor)
         end
 
         desc 'Bump build version'
         task :build do
-          version = File.read('VERSION').chomp.version
-          version.bump(:build)
-          secure_write('VERSION') { |v| v.puts version }
+          version_bump_to(:build)
+        end
+      end
+
+      desc 'Bump version with suggestion'
+      task :bump do
+        log_diff = version_log_diff(from_version: nil, to_version: 'HEAD')
+        system   = xdg_config('version_bump_system_prompt.txt', default_version_bump_system_prompt)
+        prompt   = xdg_config('version_bump_prompt.txt', default_version_bump_prompt) % { version:, log_diff: }
+        response = ollama_generate(system:, prompt:)
+        puts response
+        default = nil
+        if response =~ /(major|minor|build)\s*$/
+          default = $1
+        end
+        response = ask?(
+          'Bump a major, minor, or build version%{default}? ',
+          /\A(major|minor|build)\z/,
+          default:
+        )
+        if version_type = response&.[](1)
+          version_bump_to(version_type)
+        else
+          exit 1
         end
       end
     end
@@ -781,6 +798,11 @@ class GemHadar
     self
   end
 
+  # Generates a response from an AI model using the Ollama::Client.
+  #
+  # @param [String] system The system prompt for the AI model.
+  # @param [String] prompt The user prompt to generate a response to.
+  # @return [String, nil] The generated response or nil if generation fails.
   def ollama_generate(system:, prompt:)
     base_url = ENV['OLLAMA_URL']
     if base_url.blank? && host = ENV['OLLAMA_HOST'].full?
@@ -792,6 +814,18 @@ class GemHadar
     options  = ENV['OLLAMA_OPTIONS'].full? { |o| JSON.parse(o) } || {}
     options |= { "temperature" => 0, "top_p" => 1, "min_p" => 0.1 }
     ollama.generate(model:, system:, prompt:, options:, stream: false, think: false).response
+  end
+
+  # Increases the specified part of the version number and writes it back to
+  # the VERSION  file.
+  #
+  # @param [Symbol, String] type The part of the version to bump (:major, :minor, or :build)
+  def version_bump_to(type)
+    type    = type.to_sym
+    version = File.read('VERSION').chomp.version
+    version.bump(type)
+    secure_write('VERSION') { |v| v.puts version }
+    exit 0
   end
 
   # Determine the start and end versions for diff comparison.
@@ -991,8 +1025,9 @@ class GemHadar
   #
   # @return [ Array<String> ] an array of version strings sorted in ascending
   # order according to semantic versioning rules.
+  memoize method:
   def versions
-    @versions ||= `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).map(&:chomp).map {
+    `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).map(&:chomp).map {
       _1.sub(/\Av/, '')
     }.sort_by(&:version)
   end

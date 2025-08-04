@@ -29,4 +29,26 @@ module GemHadar::PromptTemplate
       %{log_diff}
     EOT
   end
+
+  def default_version_bump_system_prompt
+    <<~EOT
+      You are an expert at semantic versioning. Analyze the provided changes
+      and suggest whether to bump major, minor, or build version according to
+      Semantic Versioning. Provide a brief explanation of your reasoning,
+      followed by a single line containing only one word: 'major', 'minor', or
+      'build'.
+    EOT
+  end
+
+  def default_version_bump_prompt
+    <<~EOT
+      Given the current version %{version} and the following changes:
+
+      %{log_diff}
+
+      Please explain your reasoning for suggesting a version bump and then end
+      with a single line containing only one word: 'major', 'minor', or
+      'build'.
+    EOT
+  end
 end

@@ -693,6 +693,8 @@ class GemHadar
     end
   end
 
+  dsl_accessor :push_task_dependencies, %i[ modified build master:push version:push gem:push github:release ]
+
   def push_task
     master_prepare_task
     version_push_task
@@ -708,7 +710,7 @@ class GemHadar
       end
     end
     desc "Push master and version #{version} all git remotes: #{git_remotes * ' '}"
-    task :push => %i[ modified build master:push version:push gem:push github:release ]
+    task :push => push_task_dependencies
   end
 
   def compile_task

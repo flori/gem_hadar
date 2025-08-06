@@ -305,6 +305,115 @@ end
 
 Note that `gem_hadar` is ["self hosted"](Rakefile)
 
+### Configuration settings in the GemHadar block
+
+#### Core Required Attributes (Mapped to GemSpec)
+
+- **`name`** - Required gem name (raises error if not set)
+- **`version`** - Required version with fallback to `VERSION` file or ENV override
+- **`authors`** - Required author names (mapped from `author`)
+- **`email`** - Required author email (raises error if not set)
+- **`homepage`** - Required homepage URL (raises error if not set). **Validation**: When `developing` is false, validates that the URL returns an HTTP OK status after following redirects.
+- **`summary`** - Required summary description (raises error if not set)
+- **`description`** - Required full description (raises error if not set)
+
+#### Core Recommended Attributes
+
+- **`licenses`** - Default: `Set[]`. License information for the gem
+- **`required_ruby_version`** - Default: `nil`. Ruby version requirement
+
+#### Build and Package Configuration
+
+- **`require_paths`** - Default: `Set['lib']` (mapped to `require_paths`)
+- **`test_dir`** - Default: `nil`
+- **`spec_dir`** - Default: `nil`
+- **`extensions`** - Default: `FileList['ext/**/extconf.rb']` (mapped to `extensions`)
+- **`make`** - Default: `ENV['MAKE']` or system detection
+- **`executables`** - Default: `Set[]` (mapped to `executables`)
+- **`ignore_files`** - Default: `Set[]`
+- **`package_ignore_files`** - Default: `Set[]`
+
+#### Documentation and Files
+
+- **`readme`** - Default: `nil`
+- **`title`** - Default: `nil`
+- **`doc_files`** - Default: `nil`
+- **`yard_dir`** - Default: `nil`
+
+#### Testing Configuration
+
+- **`test_files`** - Default: `nil`
+- **`spec_pattern`** - Default: `nil`
+- **`bindir`** - Default: `nil` (mapped to `bindir`)
+
+#### RVM Configuration (Nested)
+
+```ruby
+rvm do
+  use     # Default: detected ruby version from `rvm tools strings`
+  gemset  # Default: gem name
+end
+```
+
+#### Task Dependencies
+
+- **`default_task_dependencies`** - Default: `[:gemspec, :test]`
+- **`build_task_dependencies`** - Default: `[:clobber, :gemspec, :package, :'version:tag']`
+- **`push_task_dependencies`** - Default: `[:modified, :build, :master:push, :version:push, :gem:push, :github:release]`
+
+#### Configuration Flags
+
+- **`developing`** - Default: `false`. When set to `true`, skips URL validation including homepage link verification for faster development cycles.
+
+### Paths and Module Types
+
+- **`path_name`** - Default: `name`. Returns the raw gem name value by default.
+  It is used for generating file paths and module names. This is particularly
+  useful for creating consistent directory structures and file naming
+  conventions. It's used internally by `GemHadar` to create the root directory
+  for the gem (`lib/my_gem` for name "my\_gem") and generate a `version.rb` file
+  in that location.
+
+  This can be changed for nested namespaces if desired.
+
+  **Example**: For gems in namespaces like `ACME` like
+  `ACME::BrainfuckCompiler`, you might set `path_name` to
+  `"acme/brainfuck_compiler"` to create the directory structure
+  `lib/acme/brainfuck_compiler/`.
+
+- **`path_module`** - Default: `path_name.camelize`. Automatically converts the
+  gem name to CamelCase format (e.g., "my\_gem" becomes "MyGem",
+  "namespace/my\_gem" becomes "Namespace::MyGem") for use in Ruby module and
+  class declarations, ensuring consistency with Ruby naming
+  conventions. This value can be overridden if needed.
+
+- **`module_type`** - Default: `:module`. Determines whether the generated code
+  structure for the version module should be a `:module` or `:class`. This
+  controls the type of Ruby construct created when generating code skeletons and
+  version files. The value
+  can be set to either:
+
+    - `:module` (default) - Generates module-based structure
+    - `:class` - Generates class-based structure
+
+    This is used in the generated `version.rb` file to create either:
+    ```ruby
+    module MyGem
+      # ... version constants
+    end
+    ```
+    or
+    ```ruby
+    class MyGem
+      # ... version constants
+    end
+    ```
+
+These computed values serve as intelligent defaults that can be overridden
+based on your specific requirements. They are automatically derived from other
+DSL accessors and provide powerful convenience features that enable `GemHadar`
+to generate consistent, well-structured Ruby code automatically.
+
 ### Available Tasks
 
 You can list all available tasks with:

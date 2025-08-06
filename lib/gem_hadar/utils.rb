@@ -19,6 +19,7 @@ module GemHadar::Utils
     end
   end
 
+  memoize method:
   # The xdg_config method retrieves configuration data from a file following
   # the XDG Base Directory specification.
   #
@@ -30,7 +31,6 @@ module GemHadar::Utils
   # @param default [ Object ] the default value to return if the configuration file is not found
   #
   # @return [ String ] the content of the configuration file or the default value
-  memoize method:
   def xdg_config(name, default)
     if File.exist?(xdg_config_filename(name))
       File.read(xdg_config_filename(name))

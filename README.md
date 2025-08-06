@@ -187,7 +187,6 @@ create a tag etc.
 
 ## Author
 
-Florian Frank \<mailto:flori@ping.de\>
 **GemHadar** was written by [Florian Frank](mailto:flori@ping.de)
 
 ## License

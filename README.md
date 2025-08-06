@@ -77,7 +77,7 @@ graph TD
 
 The source of this library is located at
 
-* http://github.com/flori/gem\_hadar
+* http://github.com/flori/gem_hadar
 
 or can be installed via
 
@@ -112,7 +112,7 @@ The following environment variables can be used to configure `gem_hadar`:
 
 To publish gems to RubyGems.org, you'll need to set up an API key:
 
-1. Generate a new API key at: https://rubygems.org/profile/api\_keys/new
+1. Generate a new API key at: https://rubygems.org/profile/api_keys/new
 2. Set the environment variable:
 
 ```bash

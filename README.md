@@ -85,6 +85,27 @@ or can be installed via
 $ gem install gem_hadar
 ```
 
+## Configuration
+
+### Github API
+
+To enable GitHub release creation and other GitHub API interactions, you'll
+need to set up a personal access token.
+
+1. Generate a new token at: https://github.com/settings/tokens/new
+2. Grant it `repo` scope for full repository access
+3. Set the environment variable:
+
+```bash
+export GITHUB_API_TOKEN="your_token_here"
+```
+
+**Security Note**: Never commit your token to version control. Use a `.env`
+file or your shell's configuration with appropriate loading mechanisms.
+
+This token is required for tasks like `rake github:release` which create GitHub
+releases with AI-generated changelogs.
+
 ## Usage
 
 ### Pre-requisites

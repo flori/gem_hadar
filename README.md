@@ -168,6 +168,50 @@ You can list all available tasks with:
 $ rake -T
 ```
 
+#### Core Build Tasks
+
+- `rake build` - Build task (builds all packages for a release)
+- `rake release` - Release the new version 1.2.3 for the gem foo
+- `rake gemspec` - Create a gemspec file
+- `rake package` - Build all the packages
+- `rake gem` - Build the gem file foo-1.2.3.gem
+- `rake clobber` - Remove any generated files
+- `rake clobber_package` - Remove package products
+- `rake repackage` - Force a rebuild of the package files
+- `rake push` - Push all changes for version 1.2.3 into the internets
+
+#### Version Management
+- `rake version` - Writing version information for foo
+- `rake version:show` - Displaying the current version
+- `rake version:list` - List all versions in order
+- `rake version:diff` - Displaying the diff from env var VERSION to the next version or HEAD
+- `rake version:tag` - Tag this commit as version 1.2.3
+- `rake version:bump` - Bump version with suggestion
+- `rake version:bump:major` - Bump major version
+- `rake version:bump:minor` - Bump minor version
+- `rake version:bump:build` - Bump build version
+- `rake version:push` - Push version 1.2.3 to all git remotes: origin
+- `rake version:origin:push` - Push version 1.2.3 to git remote origin
+
+#### Documentation
+- `rake doc` - Create yard documentation (including private)
+- `rake yard_doc` - Generate YARD Documentation
+- `rake yard:doc` - Create yard documentation
+- `rake yard:private` - Create yard documentation (including private)
+- `rake yard:public` - Create yard documentation
+- `rake yard:clean` - Clean the yard documentation
+- `rake yard:view` - View the yard documentation
+- `rake yard:list-undoc` - List all undocumented classes/modules/methods
+
+#### Testing & Development
+- `rake run_specs` - Run RSpec code examples
+- `rake clean` - Remove any temporary products
+- `rake gems:install` - Install all gems from the Gemfile
+- `rake gem_hadar:update` - Update gem_hadar to a different version
+- `rake rvm` - Create .rvmrc file
+- `rake default` - Default task
+- `rake compile` - Compile project extensions (if configured)
+
 ### Update Version
 
 Use one of the following rake tasks to bump the version:
@@ -177,7 +221,7 @@ Use one of the following rake tasks to bump the version:
 - `rake version:bump:build` - Bump build version (e.g., 1.2.3 → 1.2.4)
 - `rake version:bump` - Get AI-powered suggestion for appropriate bump level
 
-Or bump your VERSION file by hand.
+Or bump your [VERSION](./VERSION) file by hand.
 
 ### Release
 

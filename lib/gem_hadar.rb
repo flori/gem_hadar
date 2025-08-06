@@ -950,7 +950,7 @@ class GemHadar
         exit 1
       end
     end
-    desc "Push master and version #{version} all git remotes: #{git_remotes * ' '}"
+    desc "Push all changes for version #{version} into the internets."
     task :push => push_task_dependencies
   end
 

@@ -140,7 +140,7 @@ class GemHadar
   end
 
   dsl_accessor :yard_dir do
-    'yard'
+    'doc'
   end
 
   dsl_accessor :extensions do FileList['ext/**/extconf.rb'] end
@@ -551,27 +551,6 @@ class GemHadar
   # if it has been defined.
   def install_library_task
     @install_library_block.full?(:call)
-  end
-
-  # The doc_task method sets up a Rake task for generating documentation using
-  # YARD.
-  #
-  # This method configures a :doc task that cleans the existing documentation
-  # directory, runs the yard doc command, and constructs a yardoc command with
-  # optional readme and doc_files arguments. It ensures that documentation is
-  # generated with the appropriate configuration based on the gem's settings.
-  def doc_task
-    clean 'doc'
-    desc "Creating documentation"
-    task :doc do
-      sh 'yard doc'
-      cmd = 'yardoc'
-      if readme
-        cmd << " --readme '#{readme}'"
-      end
-      cmd << ' - ' << doc_files * ' '
-      sh cmd
-    end
   end
 
   # The test_task method sets up a Rake task for executing the project's test
@@ -1019,6 +998,34 @@ class GemHadar
     end
   end
 
+	def yard_doc_task
+		YARD::Rake::YardocTask.new(:yard_doc) do |t|
+			t.files = files.select { _1 =~ /\.rb\z/ }
+
+			output_dir = yard_dir
+			t.options = [ "--output-dir=#{output_dir}" ]
+
+			# Include private & protected methods in documentation
+			t.options << '--private' << '--protected'
+
+			# Handle readme if present
+			if readme && File.exist?(readme)
+				t.options << "--readme=#{readme}"
+			end
+
+			# Add additional documentation files
+			if doc_files&.any?
+				t.files.concat(doc_files.flatten)
+			end
+
+			# Add before hook for cleaning
+			t.before = proc {
+				clean output_dir
+				puts "Generating full documentation in #{output_dir}..."
+			}
+		end
+	end
+
   # The yard_task method sets up and registers Rake tasks for generating and
   # managing YARD documentation.
   #
@@ -1028,13 +1035,18 @@ class GemHadar
   # If YARD is not available, the method returns early without defining any tasks.
   def yard_task
     defined? YARD or return
+		yard_doc_task
+		desc 'Create yard documentation (including private)'
+		task :doc => :yard_doc
     namespace :yard do
       my_yard_dir = Pathname.new(yard_dir)
 
-      desc 'Create yard documentation (including private)'
-      task :private do
-        sh "yardoc -o #{my_yard_dir}"
-      end
+			task :private => :yard_doc
+
+			task :public => :yard_doc
+
+      desc 'Create yard documentation'
+      task :doc => :yard_doc
 
       desc 'View the yard documentation'
       task :view do
@@ -1072,7 +1084,6 @@ class GemHadar
     gem_hadar_update_task
     gemspec_task
     gems_install_task
-    doc_task
     if test_dir
       test_task
       rcov_task

@@ -655,7 +655,7 @@ class GemHadar
         end
       end
 
-      desc 'Bump version with suggestion'
+      desc 'Bump version with AI suggestion'
       task :bump do
         log_diff = version_log_diff(from_version: nil, to_version: 'HEAD')
         system   = xdg_config('version_bump_system_prompt.txt', default_version_bump_system_prompt)
@@ -894,7 +894,7 @@ class GemHadar
         task :release
         return
       end
-      desc "Create a new GitHub release for the current version with a changelog"
+      desc "Create a new GitHub release for the current version with a AI-generated changelog"
       task :release do
         yes = ask?(
           "Do you want to publish a release message on github? (y/n%{default}) ",

@@ -179,14 +179,17 @@ $ rake -T
 - `rake clobber_package` - Remove package products
 - `rake repackage` - Force a rebuild of the package files
 - `rake push` - Push all changes for version 1.2.3 into the internets
+- `rake github:release` - Create a new GitHub release for the current version
+  with AI-generated changelog
 
 #### Version Management
+
 - `rake version` - Writing version information for foo
 - `rake version:show` - Displaying the current version
 - `rake version:list` - List all versions in order
 - `rake version:diff` - Displaying the diff from env var VERSION to the next version or HEAD
 - `rake version:tag` - Tag this commit as version 1.2.3
-- `rake version:bump` - Bump version with suggestion
+- `rake version:bump` - Bump version with AI suggestion
 - `rake version:bump:major` - Bump major version
 - `rake version:bump:minor` - Bump minor version
 - `rake version:bump:build` - Bump build version
@@ -194,6 +197,7 @@ $ rake -T
 - `rake version:origin:push` - Push version 1.2.3 to git remote origin
 
 #### Documentation
+
 - `rake doc` - Create yard documentation (including private)
 - `rake yard_doc` - Generate YARD Documentation
 - `rake yard:doc` - Create yard documentation
@@ -204,10 +208,11 @@ $ rake -T
 - `rake yard:list-undoc` - List all undocumented classes/modules/methods
 
 #### Testing & Development
+
 - `rake run_specs` - Run RSpec code examples
 - `rake clean` - Remove any temporary products
 - `rake gems:install` - Install all gems from the Gemfile
-- `rake gem_hadar:update` - Update gem_hadar to a different version
+- `rake gem_hadar:update` - Update `gem_hadar` to a different version
 - `rake rvm` - Create .rvmrc file
 - `rake default` - Default task
 - `rake compile` - Compile project extensions (if configured)

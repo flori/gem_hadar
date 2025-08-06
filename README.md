@@ -185,8 +185,9 @@ Or bump your VERSION file by hand.
 $ rake build
 ```
 
-This will basically regenerate the .gemspec with values from the Rakefile,
-create a tag etc.
+This command will execute a series of dependent tasks in order: cleaning
+previous builds, generating the gem specification, packaging the gem, and
+creating a git tag with the current version in git.
 
 ## Author
 

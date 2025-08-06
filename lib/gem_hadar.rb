@@ -1263,8 +1263,12 @@ class GemHadar
         s.rdoc_options << '--title' << "#{name.camelize} - #{summary}"
       end
       if readme
-        s.rdoc_options << '--main' << readme
-        s.extra_rdoc_files << readme
+        if File.exist?(readme)
+          s.rdoc_options << '--main' << readme
+          s.extra_rdoc_files << readme
+        else
+          warn "Add a #{readme} file to document your gem!"
+        end
       end
       doc_files.full? { |df| s.extra_rdoc_files.concat Array(df) }
     end

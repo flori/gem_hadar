@@ -1082,12 +1082,79 @@ class GemHadar
     task :yard => %i[ yard:private yard:view ]
   end
 
+  def config_task
+    namespace :gem_hadar do
+      desc "Display current gem_hadar configuration"
+      task :config do
+        puts "=== GemHadar Configuration ==="
+
+        # RubyGems
+        if ENV['GEM_HOST_API_KEY'].present?
+          puts "RubyGems API Key: *** (set)"
+        else
+          puts "RubyGems API Key: Not set"
+        end
+
+        # GitHub
+        if ENV['GITHUB_API_TOKEN'].present?
+          puts "GitHub API Token: *** (set)"
+        else
+          puts "GitHub API Token: Not set"
+        end
+
+        # Ollama
+        puts "Ollama Model: #{ollama_model} (default is #{ollama_model_default})"
+
+        if url = ollama_client&.full?(:base_url)&.to_s
+          puts "Ollama Base URL: #{url.inspect}"
+        else
+          puts "Ollama Base URL: Not set"
+        end
+
+        if ENV['OLLAMA_MODEL_OPTIONS']
+          puts "Ollama Model Options: #{ENV['OLLAMA_MODEL_OPTIONS']}"
+        else
+          puts "Ollama Model Options: Not set (using defaults)"
+        end
+
+        # XDG config home
+        puts "XDG config home: #{xdg_config_home.to_s.inspect}"
+
+        # General
+        puts "Gem Name: #{name}"
+        puts "Version: #{version}"
+
+        # Build/Development
+        puts "MAKE: #{ENV['MAKE'] || 'Not set (will use gmake or make)'}"
+        puts "EDITOR: #{ENV['EDITOR'] || 'Not set (will use vi)'}"
+
+        # Git
+        puts "Git Remote(s): #{ENV['GIT_REMOTE'] || 'origin'}"
+
+        # Other
+        puts "Force Operations: #{ENV['FORCE'] || '0'}"
+        puts "Version Override: #{ENV['VERSION'] || 'Not set'}"
+        puts "GitHub Release Enabled: #{ENV['GITHUB_RELEASE_ENABLED'] || 'Not set'}"
+
+        puts "\n=== AI Prompt Configuration (Default Values) ==="
+        arrow = ?⤵
+        puts bold{"version_bump_system_prompt.txt"} + "#{arrow}\n" + italic{default_version_bump_system_prompt}
+        puts bold{"version_bump_prompt.txt"} + "#{arrow}\n#{default_version_bump_prompt}"
+        puts bold{"release_system_prompt.txt"} + "#{arrow}\n" + italic{default_git_release_system_prompt}
+        puts bold{"release_prompt.txt"} + "#{arrow}\n" + italic{default_git_release_prompt}
+
+        puts "=== End Configuration ==="
+      end
+    end
+  end
+
   # The create_all_tasks method sets up and registers all the Rake tasks for
   # the gem project.
   #
   # @return [GemHadar] the instance of GemHadar
   def create_all_tasks
     default_task
+    config_task
     build_task
     rvm_task
     version_task
@@ -1144,19 +1211,52 @@ class GemHadar
     temp_file&.close&.unlink
   end
 
+  dsl_accessor :ollama_model_default, 'llama3.1'.freeze
+
+  # The ollama_model method retrieves the name of the Ollama AI model to be
+  # used for generating responses.
+  #
+  # It first checks the OLLAMA_MODEL environment variable for a custom model
+  # specification. If the environment variable is not set, it falls back to
+  # using the default model name, which is determined by the
+  # ollama_model_default dsl method.
+  #
+  # @return [ String ] the name of the Ollama AI model to be used
+  def ollama_model
+    ENV.fetch('OLLAMA_MODEL', ollama_model_default)
+  end
+
+  # The ollama_client method creates and returns an Ollama::Client instance
+  # configured with a base URL derived from environment variables.
+  #
+  # It first checks for the OLLAMA_URL environment variable to determine the
+  # base URL. If that is not set, it falls back to using the OLLAMA_HOST
+  # environment variable, defaulting to 'localhost:11434' if that is also not
+  # set. The method then constructs the full base URL and initializes an
+  # Ollama::Client with appropriate timeouts for read and connect operations.
+  #
+  # @return [Ollama::Client, nil] An initialized Ollama::Client instance if a valid base URL is present, otherwise nil.
+  def ollama_client
+    base_url = ENV['OLLAMA_URL']
+    if base_url.blank?
+      host = ENV.fetch('OLLAMA_HOST', 'localhost:11434')
+      base_url = 'http://%s' % host
+    end
+    base_url.present? or return
+    ollama = Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
+  end
+
   # Generates a response from an AI model using the Ollama::Client.
   #
   # @param [String] system The system prompt for the AI model.
   # @param [String] prompt The user prompt to generate a response to.
   # @return [String, nil] The generated response or nil if generation fails.
   def ollama_generate(system:, prompt:)
-    base_url = ENV['OLLAMA_URL']
-    if base_url.blank? && host = ENV['OLLAMA_HOST'].full?
-      base_url = 'http://%s' % host
+    unless ollama = ollama_client
+      warn "Ollama is not configured. => Returning."
+      return
     end
-    base_url.present? or return
-    ollama   = Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
-    model    = ENV.fetch('OLLAMA_MODEL', 'llama3.1')
+    model    = ollama_model
     options  = ENV['OLLAMA_MODEL_OPTIONS'].full? { |o| JSON.parse(o) } || {}
     options |= { "temperature" => 0, "top_p" => 1, "min_p" => 0.1 }
     ollama.generate(model:, system:, prompt:, options:, stream: false, think: false).response

@@ -87,6 +87,43 @@ $ gem install gem_hadar
 
 ## Configuration
 
+### Environment Variables
+
+The following environment variables can be used to configure `gem_hadar`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GEM_HOST_API_KEY` | API key for gem hosting services | Not set |
+| `GITHUB_API_TOKEN` | GitHub personal access token for releases | Not set |
+| `OLLAMA_MODEL` | Ollama model name for AI generation | `llama3.1` |
+| `OLLAMA_HOST` | Ollama server host URL | `localhost:11434` |
+| `OLLAMA_URL` | Direct Ollama API URL (takes precedence over `OLLAMA_HOST`) | Not set |
+| `OLLAMA_MODEL_OPTIONS` | JSON configuration for Ollama model | Not set |
+| `HOME` | User's home directory (used for config file locations) | System default |
+| `XDG_CONFIG_HOME` | XDG configuration directory override | System default |
+| `MAKE` | Make program to use for building extensions | `gmake` or `make` |
+| `VERSION` | Override the version string for some tasks | Not set |
+| `FORCE` | Force certain operations (1 to enable) | 0 |
+| `GIT_REMOTE` | Git remote name(s) for operations, space separated | `origin` |
+| `GITHUB_RELEASE_ENABLED` | Enable GitHub releases (yes/no) | Auto-detected |
+| `EDITOR` | Editor to use for interactive tasks | `vi` |
+
+### Rubygems API
+
+To publish gems to RubyGems.org, you'll need to set up an API key:
+
+1. Generate a new API key at: https://rubygems.org/profile/api\_keys/new
+2. Set the environment variable:
+
+```bash
+export GEM_HOST_API_KEY="your_api_key_here"
+```
+
+**Security Note**: Never commit your API key to version control. Use a `.env`
+file or your shell's configuration with appropriate loading mechanisms.
+
+This key is required for tasks like `rake release` which push the gem package to RubyGems.org.
+
 ### Github API
 
 To enable GitHub release creation and other GitHub API interactions, you'll
@@ -105,6 +142,93 @@ file or your shell's configuration with appropriate loading mechanisms.
 
 This token is required for tasks like `rake github:release` which create GitHub
 releases with AI-generated changelogs.
+
+### Local Ollama AI
+
+The gem supports AI-powered changelog generation using Ollama. To configure
+this functionality:
+
+1. Install and run Ollama locally: https://ollama.com/download
+2. Pull the desired model (e.g., `ollama pull deepseek-r1:32b`)
+3. Set the following environment variables:
+
+```bash
+export OLLAMA_HOST="http://localhost:11434"
+export OLLAMA_MODEL="deepseek-r1:32b"
+export OLLAMA_MODEL_OPTIONS='{"num_ctx":16384,"seed":-1,"num_predict":512,"temperature":0.4,"top_p":0.95,"top_k":20,"min_p":0}'
+```
+
+The default model is `llama3.1` and the default host is
+`http://localhost:11434`. These can be overridden based on your local Ollama
+setup.
+
+The model options example configures:
+
+- `num_ctx`: Context window size (16384 tokens)
+- `temperature`: Response randomness (0.4 for balanced output)
+- `num_predict`: Maximum tokens to generate (512)
+- `top_p`, `top_k`, `min_p`: Sampling parameters for controlled generation
+
+This functionality is used by the `rake github:release` and `rake version:bump`
+task to generate AI-powered changelogs or suggest a version bump.
+
+### Custom AI Prompts
+
+To customize the AI prompts used by `gem_hadar`, you can override the default
+prompt files in your XDG configuration directory.
+
+First, display the current default prompts using:
+
+```bash
+$ rake gem_hadar:config
+```
+
+This will show you the `XDG_CONFIG_HOME`, default system and user prompts for
+version bumping and release generation. The output includes the exact template
+variables that are available for use in your custom prompts.
+
+Then, create the following files in your XDG configuration home directory:
+
+- `version_bump_system_prompt.txt`
+- `version_bump_prompt.txt` 
+- `release_system_prompt.txt`
+- `release_prompt.txt`
+
+Start with the default values shown by `rake gem_hadar:config` and modify them
+to suit your needs. The prompts support standard Ruby string interpolation with
+the following variables:
+
+For version bump prompts:
+- `%{version}` - Current gem version
+- `%{log_diff}` - Git diff of changes
+
+For release prompts:
+- `%{name}` - Gem name
+- `%{version}` - New version being released
+- `%{log_diff}` - Git diff of changes
+
+This approach ensures your custom prompts work correctly with the template
+variables while maintaining consistency with the gem's expected input format.
+
+### Output current configuration
+
+To debug or verify your `gem_hadar` configuration, you can use the following
+rake task:
+
+```bash
+$ rake gem_hadar:config
+```
+
+This task displays all current configuration values including:
+- GitHub API token (masked)
+- RubyGems API key (masked)  
+- Ollama model settings
+- Repository information (gem name, version)
+- Build parameters (MAKE, EDITOR)
+- Git configuration (remote)
+- Other flags (FORCE, VERSION, GITHUB_RELEASE_ENABLED)
+- XDG/HOME directories
+- AI prompt defaults
 
 ## Usage
 

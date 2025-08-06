@@ -1,4 +1,20 @@
+require 'pathname'
+
 module GemHadar::Utils
+  # The xdg_config_home method determines the path to the XDG configuration
+  # directory.
+  #
+  # It first checks if the XDG_CONFIG_HOME environment variable is set and not
+  # empty. If it is set, the method returns the value as a Pathname object. If
+  # XDG_CONFIG_HOME is not set, it defaults to using the HOME environment
+  # variable to construct the path within the standard .config directory.
+  #
+  # @return [ Pathname ] the Pathname object representing the XDG configuration directory
+  def xdg_config_home
+    ENV['XDG_CONFIG_HOME'].full? { Pathname.new(_1) } ||
+      Pathname.new(ENV.fetch('HOME')) + '.config'
+  end
+
   # The xdg_config_filename method constructs the full path to a configuration
   # file based on the XDG Base Directory specification.
   #
@@ -12,11 +28,7 @@ module GemHadar::Utils
   #
   # @return [ String ] the full path to the configuration file
   def xdg_config_filename(name)
-    if xdg = ENV['XDG_CONFIG_HOME'].full?
-      File.join(xdg, name)
-    else
-      File.join(ENV.fetch('HOME'), '.config', name)
-    end
+    xdg_config_home + name
   end
 
   memoize method:

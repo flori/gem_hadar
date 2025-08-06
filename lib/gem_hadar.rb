@@ -1157,7 +1157,7 @@ class GemHadar
     base_url.present? or return
     ollama   = Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
     model    = ENV.fetch('OLLAMA_MODEL', 'llama3.1')
-    options  = ENV['OLLAMA_OPTIONS'].full? { |o| JSON.parse(o) } || {}
+    options  = ENV['OLLAMA_MODEL_OPTIONS'].full? { |o| JSON.parse(o) } || {}
     options |= { "temperature" => 0, "top_p" => 1, "min_p" => 0.1 }
     ollama.generate(model:, system:, prompt:, options:, stream: false, think: false).response
   end

@@ -168,19 +168,19 @@ You can list all available tasks with:
 $ rake -T
 ```
 
-#### Core Build Tasks
+#### Core Tasks
 
 - `rake build` - Build task (builds all packages for a release)
 - `rake release` - Release the new version 1.2.3 for the gem foo
+
+#### Build Tasks
+
 - `rake gemspec` - Create a gemspec file
 - `rake package` - Build all the packages
 - `rake gem` - Build the gem file foo-1.2.3.gem
 - `rake clobber` - Remove any generated files
 - `rake clobber_package` - Remove package products
 - `rake repackage` - Force a rebuild of the package files
-- `rake push` - Push all changes for version 1.2.3 into the internets
-- `rake github:release` - Create a new GitHub release for the current version
-  with AI-generated changelog
 
 #### Version Management
 
@@ -216,6 +216,11 @@ $ rake -T
 - `rake rvm` - Create .rvmrc file
 - `rake default` - Default task
 - `rake compile` - Compile project extensions (if configured)
+
+#### Publishing Tasks
+- `rake push` - Push all changes for version 1.2.3 into the internets
+- `rake github:release` - Create a new GitHub release for the current version
+  with AI-generated changelog
 
 ### Update Version
 

@@ -51,6 +51,12 @@ class GemHadar
     block and instance_eval(&block)
   end
 
+  # The has_to_be_set method raises an error if a required gem configuration
+  # attribute is not set.
+  #
+  # @param name [ String ] the name of the required attribute
+  #
+  # @raise [ ArgumentError ] if the specified attribute has not been set
   def has_to_be_set(name)
     fail "#{self.class}: #{name} has to be set for gem"
   end
@@ -182,6 +188,18 @@ class GemHadar
     dsl_accessor :gemset do @outer_scope.name end
   end
 
+  # The rvm method configures RVM (Ruby Version Manager) settings for the gem
+  # project.
+  #
+  # This method initializes and returns an RvmConfig object that holds RVM-specific
+  # configuration such as the Ruby version to use and the gemset name.
+  # If a block is provided, it configures the RvmConfig object with the given
+  # settings. If no block is provided and no existing RvmConfig object exists,
+  # it creates a new one with default settings.
+  #
+  # @param block [ Proc ] optional block to configure RVM settings
+  #
+  # @return [ GemHadar::RvmConfig ] the RVM configuration object
   def rvm(&block)
     if block
       @rvm = RvmConfig.new(&block)
@@ -193,6 +211,12 @@ class GemHadar
 
   dsl_accessor :default_task_dependencies, [ :gemspec, :test ]
 
+  # The default_task method defines the default Rake task for the gem project.
+  #
+  # This method sets up a Rake task named :default that depends on the tasks
+  # specified in the default_task_dependencies accessor. It provides a convenient
+  # way to run the most common or essential tasks for the project with a single
+  # command.
   def default_task
     desc 'Default task'
     task :default => default_task_dependencies
@@ -200,11 +224,26 @@ class GemHadar
 
   dsl_accessor :build_task_dependencies, [ :clobber, :gemspec, :package, :'version:tag' ]
 
+  # The build_task method defines a Rake task that orchestrates the complete
+  # build process for packaging the gem.
+  #
+  # This method sets up a :build task that depends on the tasks specified in
+  # the build_task_dependencies accessor. It provides a convenient way to
+  # execute all necessary steps for building packages for a release with a
+  # single command.
   def build_task
     desc 'Build task (builds all packages for a release)'
     task :build => build_task_dependencies
   end
 
+  # The install_library method sets up a Rake task for installing the library
+  # or executable into site_ruby directories.
+  #
+  # This method configures an :install task that depends on the
+  # :prepare_install task and executes the provided block. It stores the block
+  # in an instance variable to be called later when the task is executed.
+  #
+  # @param block [ Proc ] the block containing the installation logic
   def install_library(&block)
     @install_library_block = -> do
       desc 'Install executable/library into site_ruby directories'
@@ -212,6 +251,15 @@ class GemHadar
     end
   end
 
+  # The clean method manages the CLEAN file list for Rake tasks.
+  #
+  # When called without arguments, it returns the current CLEAN file list.
+  # When called with arguments, it adds the specified files to the CLEAN list.
+  #
+  # @param args [ Array<String> ] optional list of files to add to the CLEAN list
+  #
+  # @return [ FileList, nil ] the CLEAN file list when no arguments provided,
+  #                           nil otherwise
   def clean(*args)
     if args.empty?
       CLEAN
@@ -220,6 +268,15 @@ class GemHadar
     end
   end
 
+  # The clobber method manages the CLOBBER file list for Rake tasks.
+  #
+  # When called without arguments, it returns the current CLOBBER file list.
+  # When called with arguments, it adds the specified files to the CLOBBER list.
+  #
+  # @param args [ Array<String> ] optional list of files to add to the CLOBBER list
+  #
+  # @return [ FileList, nil ] the CLOBBER file list when no arguments provided,
+  #                           nil otherwise
   def clobber(*args)
     if args.empty?
       CLOBBER
@@ -228,6 +285,15 @@ class GemHadar
     end
   end
 
+  # The ignore method manages the list of files to be ignored by the gem.
+  #
+  # When called without arguments, it returns the current set of ignored files.
+  # When called with arguments, it adds the specified files to the ignore list.
+  #
+  # @param args [ Array<String> ] optional list of file patterns to add to the ignore list
+  #
+  # @return [ Set<String>, nil ] the set of ignored files when no arguments provided,
+  #                           nil otherwise
   def ignore(*args)
     if args.empty?
       ignore_files
@@ -236,6 +302,17 @@ class GemHadar
     end
   end
 
+  # The package_ignore method manages the list of files to be ignored during
+  # gem packaging.
+  #
+  # When called without arguments, it returns the current set of package ignore
+  # files. When called with arguments, it adds the specified file patterns to
+  # the package ignore list.
+  #
+  # @param args [ Array<String> ] optional list of file patterns to add to the package ignore list
+  #
+  # @return [ Set<String>, nil ] the set of package ignore files when no arguments provided,
+  #                           nil otherwise
   def package_ignore(*args)
     if args.empty?
       package_ignore_files
@@ -244,14 +321,28 @@ class GemHadar
     end
   end
 
+  # The dependency method adds a new runtime dependency to the gem.
+  #
+  # @param args [ Array ] the arguments defining the dependency
   def dependency(*args)
     @dependencies << args
   end
 
+  # The development_dependency method adds a new development-time dependency to
+  # the gem.
+  #
+  # @param args [ Array ] the arguments defining the development dependency
   def development_dependency(*args)
     @development_dependencies << args
   end
 
+  # The gems_install_task method defines a Rake task for installing all gem
+  # dependencies specified in the Gemfile.
+  #
+  # This method sets up a :gems:install task that executes a block to install
+  # gems. If no block is provided, it defaults to running 'bundle install'.
+  #
+  # @param block [ Proc ] optional block containing the installation command
   def gems_install_task(&block)
     block ||= proc {  sh 'bundle install' }
     desc 'Install all gems from the Gemfile'
@@ -260,6 +351,14 @@ class GemHadar
     end
   end
 
+  # The version_task method defines a Rake task that generates a version file
+  # for the gem.
+  #
+  # This method creates a task named :version that writes version information
+  # to a Ruby file in the lib directory. The generated file contains constants
+  # for the version and its components, as well as an optional epilogue
+  # section. The task ensures the target directory exists and uses secure file
+  # writing to prevent permission issues.
   def version_task
     desc m = "Writing version information for #{name}-#{version}"
     task :version do
@@ -281,6 +380,13 @@ class GemHadar
     end
   end
 
+  # The version_show_task method defines a Rake task that displays the current
+  # version of the gem.
+  #
+  # This method creates a :version:show task under the Rake namespace that
+  # reads the version from the generated version file in the lib directory and
+  # compares it with the version specified in the GemHadar configuration. It
+  # then outputs a message indicating whether the versions match or not.
   def version_show_task
     namespace :version do
       desc "Displaying the current version"
@@ -299,6 +405,21 @@ class GemHadar
     end
   end
 
+  # The version_log_diff method generates a git log output containing patch
+  # differences between two specified versions.
+  #
+  # This method retrieves the commit history between a starting version and an
+  # ending version, including detailed changes (patch format) for each commit.
+  # It supports comparing against the current HEAD or specific version tags,
+  # and automatically determines the appropriate previous version when only a
+  # target version is provided.
+  #
+  # @param to_version [ String ] the ending version tag or 'HEAD' to compare up to the latest commit
+  # @param from_version [ String, nil ] the starting version tag; if nil, it defaults based on to_version
+  #
+  # @raise [ RuntimeError ] if the specified version tags are not found in the repository
+  #
+  # @return [ String ] the git log output in patch format showing changes between the two versions
   def version_log_diff(to_version: 'HEAD', from_version: nil)
     if to_version == 'HEAD'
       if from_version.blank?
@@ -331,6 +452,15 @@ class GemHadar
     end
   end
 
+  # The version_diff_task method defines Rake tasks for listing and displaying
+  # git version differences.
+  #
+  # This method sets up two subtasks under the :version namespace:
+  #
+  # - A :list task that fetches all git tags, ensures the operation succeeds,
+  # and outputs the sorted list of versions.
+  # - A :diff task that calculates the version range, displays a colored diff
+  # between the versions, and shows the changes.
   def version_diff_task
     namespace :version do
       desc "List all versions in order"
@@ -349,6 +479,15 @@ class GemHadar
     end
   end
 
+  # The gem_hadar_update_task method defines a Rake task that updates the
+  # gem_hadar dependency version in the gemspec file.
+  #
+  # This method creates a :gem_hadar:update task under the Rake namespace that
+  # prompts the user to specify a new gem_hadar version.
+  # It then reads the existing gemspec file, modifies the version constraint
+  # for the gem_hadar dependency, and writes the updated content back to the
+  # file. If the specified version is already present in the gemspec, it skips
+  # the update and notifies the user.
   def gem_hadar_update_task
     namespace :gem_hadar do
       desc 'Update gem_hadar a different version'
@@ -377,6 +516,14 @@ class GemHadar
     end
   end
 
+  # The gemspec_task method defines a Rake task that generates and writes a
+  # gemspec file for the project.
+  #
+  # This method creates a :gemspec task that depends on the :version task,
+  # ensuring the version is set before generating the gemspec. It constructs
+  # the filename based on the project name, displays a warning message
+  # indicating the file being written, and uses secure_write to create the
+  # gemspec file with content generated by the gemspec method.
   def gemspec_task
     desc 'Create a gemspec file'
     task :gemspec => :version do
@@ -386,6 +533,12 @@ class GemHadar
     end
   end
 
+  # The package_task method sets up a Rake task for packaging the gem.
+  #
+  # This method configures a task that creates a package directory, initializes
+  # a Gem::PackageTask with the current gem specification, and specifies that
+  # tar files should be created. It also includes the files to be packaged by
+  # adding gem_files to the package_files attribute of the Gem::PackageTask.
   def package_task
     clean 'pkg'
     Gem::PackageTask.new(gemspec) do |pkg|
@@ -394,10 +547,19 @@ class GemHadar
     end
   end
 
+  # The install_library_task method executes the installed library task block
+  # if it has been defined.
   def install_library_task
     @install_library_block.full?(:call)
   end
 
+  # The doc_task method sets up a Rake task for generating documentation using
+  # YARD.
+  #
+  # This method configures a :doc task that cleans the existing documentation
+  # directory, runs the yard doc command, and constructs a yardoc command with
+  # optional readme and doc_files arguments. It ensures that documentation is
+  # generated with the appropriate configuration based on the gem's settings.
   def doc_task
     clean 'doc'
     desc "Creating documentation"
@@ -412,6 +574,14 @@ class GemHadar
     end
   end
 
+  # The test_task method sets up a Rake task for executing the project's test
+  # suite.
+  #
+  # This method configures a Rake task named :test that runs the test suite
+  # using Rake::TestTask. It includes the test directory and required paths in
+  # the load path, specifies the test files to run, and enables verbose output.
+  # The task also conditionally depends on the :compile task if project
+  # extensions are present.
   def test_task
     tt =  Rake::TestTask.new(:run_tests) do |t|
       t.libs << test_dir
@@ -423,6 +593,12 @@ class GemHadar
     task :test => [ (:compile if extensions.full?), tt.name ].compact
   end
 
+  # The spec_task method sets up a Rake task for executing RSpec tests.
+  #
+  # This method configures a :spec task that runs the project's RSpec test
+  # suite. It initializes an RSpec::Core::RakeTask with appropriate Ruby
+  # options, test pattern, and verbose output. The task also conditionally
+  # depends on the :compile task if project extensions are present.
   def spec_task
     defined? ::RSpec::Core::RakeTask or return
     st =  RSpec::Core::RakeTask.new(:run_specs) do |t|
@@ -434,6 +610,15 @@ class GemHadar
     task :spec => [ (:compile if extensions.full?), st.name ].compact
   end
 
+  # The rcov_task method sets up a Rake task for executing code coverage tests
+  # using RCov.
+  #
+  # This method configures a :rcov task that runs the project's test suite with
+  # RCov to generate code coverage reports. It includes the test directory and
+  # required paths in the load path, specifies the test files to run, and
+  # enables verbose output. The task also conditionally depends on the :compile
+  # task if project extensions are present. If RCov is not available, it
+  # displays a warning message suggesting to install RCov.
   def rcov_task
     if defined?(::Rcov)
       rt = ::Rcov::RcovTask.new(:run_rcov) do |t|
@@ -455,6 +640,23 @@ class GemHadar
     end
   end
 
+  # The version_bump_task method defines Rake tasks for incrementing the gem's
+  # version number.
+  #
+  # This method sets up a hierarchical task structure under the :version
+  # namespace:
+  #
+  # - It creates subtasks in the :version:bump namespace for explicitly bumping
+  # major, minor, or build versions.
+  # - It also defines a :version:bump task that automatically suggests the
+  # appropriate version bump type by analyzing recent changes using AI. The
+  # suggestion is based on the git log diff between the previous version and
+  # the current HEAD, and it prompts the user for confirmation before applying
+  # the bump.
+  #
+  # The tasks utilize the version_log_diff method to gather change information,
+  # the ollama_generate method to get AI-powered suggestions, and the
+  # version_bump_to method to perform the actual version update.
   def version_bump_task
     namespace :version do
       namespace :bump do
@@ -499,6 +701,15 @@ class GemHadar
     end
   end
 
+  # The version_tag_task method defines a Rake task that creates a Git tag for
+  # the current version.
+  #
+  # This method sets up a :version:tag task under the Rake namespace that
+  # creates an annotated Git tag for the project's current version. It checks
+  # if a tag with the same name already exists and handles the case where the
+  # tag exists but is different from the current commit. If the tag already
+  # exists and is different, it prompts the user to confirm whether to
+  # overwrite it forcefully.
   def version_tag_task
     namespace :version do
       desc "Tag this commit as version #{version}"
@@ -523,10 +734,24 @@ class GemHadar
     end
   end
 
+  # The git_remote method retrieves the primary Git remote name configured for
+  # the project.
+  #
+  # It first checks the GIT_REMOTE environment variable for a custom remote
+  # specification. If not set, it defaults to 'origin'. When multiple remotes
+  # are specified in the environment variable, only the first one is returned.
   def git_remote
     ENV.fetch('GIT_REMOTE', 'origin').split(/\s+/).first
   end
 
+  # The master_prepare_task method defines a Rake task that sets up a remote
+  # Git repository for the project.
+  #
+  # This method creates a :master:prepare task under the Rake namespace that
+  # guides the user through creating a new bare Git repository on a remote
+  # server via SSH. It prompts for the remote name, directory path, and SSH
+  # account details to configure the repository and establish a connection back
+  # to the local project.
   def master_prepare_task
     namespace :master do
       desc "Prepare a remote git repository for this project"
@@ -544,6 +769,20 @@ class GemHadar
     end
   end
 
+  # The version_push_task method defines Rake tasks for pushing version tags to
+  # Git remotes.
+  #
+  # This method sets up a hierarchical task structure under the :version
+  # namespace:
+  #
+  # - It creates subtasks in the :version:push namespace for each configured
+  # Git remote, allowing individual pushes to specific remotes.
+  # - It also defines a top-level :version:push task that depends on all the
+  # individual remote push tasks, enabling a single command to push the version
+  # tag to all remotes.
+  #
+  # The tasks utilize the git_remotes method to determine which remotes are
+  # configured and generate appropriate push commands for each one.
   def version_push_task
     namespace :version do
       git_remotes.each do |gr|
@@ -560,6 +799,19 @@ class GemHadar
     end
   end
 
+  # The master_push_task method defines Rake tasks for pushing the master
+  # branch to configured Git remotes.
+  #
+  # This method sets up a hierarchical task structure under the :master namespace:
+  #
+  # - It creates subtasks in the :master:push namespace for each configured Git
+  #   remote, allowing individual pushes to specific remotes.
+  # - It also defines a top-level :master:push task that depends on all the individual
+  #   remote push tasks, enabling a single command to push the master branch to
+  #   all remotes.
+  #
+  # The tasks utilize the git_remotes method to determine which remotes are
+  # configured and generate appropriate push commands for each one.
   def master_push_task
     namespace :master do
       git_remotes.each do |gr|
@@ -576,6 +828,17 @@ class GemHadar
     end
   end
 
+  # The gem_push_task method defines a Rake task for pushing the generated gem
+  # file to RubyGems.
+  #
+  # This method sets up a :gem:push task under the Rake namespace that handles
+  # the process of uploading the gem package to RubyGems. It checks if the
+  # project is in developing mode and skips the push operation if so.
+  # Otherwise, it verifies the existence of the gem file, prompts the user for
+  # confirmation before pushing, and uses the gem push command with an optional
+  # API key from the environment. If the gem file does not exist or the user
+  # declines to push, appropriate messages are displayed and the task exits
+  # accordingly.
   def gem_push_task
     namespace :gem do
       path = "pkg/#{name_version}.gem"
@@ -604,6 +867,15 @@ class GemHadar
     end
   end
 
+  # The git_remotes_task method defines a Rake task that displays all Git
+  # remote repositories configured for the project.
+  #
+  # This method sets up a :git_remotes task under the Rake namespace that
+  # retrieves and prints the list of Git remotes along with their URLs. It uses
+  # the git_remotes method to obtain the remote names and then fetches each
+  # remote's URL using the `git remote get-url` command. The output is
+  # formatted to show each remote name followed by its corresponding URL on
+  # separate lines.
   def git_remotes_task
     task :git_remotes do
       puts git_remotes.map { |r|
@@ -613,6 +885,14 @@ class GemHadar
     end
   end
 
+  # The create_git_release_body method generates a changelog for a GitHub
+  # release by analyzing the git diff between the previous version and the
+  # current HEAD.
+  #
+  # It retrieves the log differences, fetches or uses default system and prompt
+  # templates, and utilizes an AI model to produce a formatted changelog entry.
+  #
+  # @return [ String ] the generated changelog content for the release body
   def create_git_release_body
     log_diff = version_log_diff(to_version: version)
     system   = xdg_config('release_system_prompt.txt', default_git_release_system_prompt)
@@ -620,26 +900,14 @@ class GemHadar
     ollama_generate(system:, prompt:)
   end
 
-  def edit_temp_file(content)
-    editor = ENV.fetch('EDITOR', `which vi`.chomp)
-    unless File.exist?(editor)
-      warn "Can't find EDITOR. => Returning."
-      return
-    end
-    temp_file = Tempfile.new('changelog')
-    temp_file.write(content)
-    temp_file.close
-
-    unless system("#{editor} #{temp_file.path}")
-      warn "#{editor} returned #{$?.exitstatus} => Returning."
-      return
-    end
-
-    File.read(temp_file.path)
-  ensure
-    temp_file&.close&.unlink
-  end
-
+  # The github_release_task method defines a Rake task that creates a GitHub
+  # release for the current version.
+  #
+  # This method sets up a :github:release task that prompts the user to confirm
+  # publishing a release message on GitHub. It retrieves the GitHub API token
+  # from the environment, derives the repository owner and name from the git
+  # remote URL, generates a changelog using AI, and creates the release via the
+  # GitHub API.
   def github_release_task
     namespace :github do
       unless github_api_token = ENV['GITHUB_API_TOKEN'].full?
@@ -681,6 +949,14 @@ class GemHadar
 
   dsl_accessor :push_task_dependencies, %i[ modified build master:push version:push gem:push github:release ]
 
+  # The push_task method defines a Rake task that orchestrates the complete
+  # process of pushing changes and artifacts to remote repositories and package
+  # managers.
+  #
+  # This method sets up multiple subtasks including preparing the master
+  # branch, pushing version tags, pushing to gem repositories, and creating
+  # GitHub releases. It also includes a check for uncommitted changes before
+  # proceeding with the push operations.
   def push_task
     master_prepare_task
     version_push_task
@@ -699,6 +975,10 @@ class GemHadar
     task :push => push_task_dependencies
   end
 
+  # The compile_task method sets up a Rake task to compile project extensions.
+  #
+  # This method creates a :compile task that iterates through the configured
+  # extensions and compiles them using the system's make command.
   def compile_task
     for file in extensions
       dir = File.dirname(file)
@@ -716,6 +996,16 @@ class GemHadar
     end
   end
 
+  # The rvm_task method creates a .rvmrc file that configures RVM to use the
+  # specified Ruby version and gemset for the project.
+  #
+  # This task generates a .rvmrc file in the project root directory with commands to:
+  # - Use the Ruby version specified by the rvm.use accessor
+  # - Create the gemset specified by the rvm.gemset accessor
+  # - Switch to using that gemset
+  #
+  # The generated file is written using the secure_write method to ensure
+  # proper file permissions.
   def rvm_task
     desc 'Create .rvmrc file'
     task :rvm do
@@ -729,6 +1019,13 @@ class GemHadar
     end
   end
 
+  # The yard_task method sets up and registers Rake tasks for generating and
+  # managing YARD documentation.
+  #
+  # It creates multiple subtasks under the :yard namespace, including tasks for
+  # creating private documentation, viewing the generated documentation,
+  # cleaning up documentation files, and listing undocumented elements.
+  # If YARD is not available, the method returns early without defining any tasks.
   def yard_task
     defined? YARD or return
     namespace :yard do
@@ -796,6 +1093,31 @@ class GemHadar
       task :prepare_install
     end
     self
+  end
+
+  # The edit_temp_file method creates a temporary file with the provided
+  # content, opens it in an editor for user modification, and returns the
+  # updated content.
+  #
+  # @param content [ String ] the initial content to write to the temporary file
+  def edit_temp_file(content)
+    editor = ENV.fetch('EDITOR', `which vi`.chomp)
+    unless File.exist?(editor)
+      warn "Can't find EDITOR. => Returning."
+      return
+    end
+    temp_file = Tempfile.new('changelog')
+    temp_file.write(content)
+    temp_file.close
+
+    unless system("#{editor} #{temp_file.path}")
+      warn "#{editor} returned #{$?.exitstatus} => Returning."
+      return
+    end
+
+    File.read(temp_file.path)
+  ensure
+    temp_file&.close&.unlink
   end
 
   # Generates a response from an AI model using the Ollama::Client.
@@ -1045,6 +1367,11 @@ class GemHadar
     end
   end
 
+  # The version_untag method removes the 'v' prefix from a version tag string.
+  #
+  # @param version_tag [ String ] the version tag string that may start with 'v'
+  #
+  # @return [ String ] the version string with the 'v' prefix removed
   def version_untag(version_tag)
     version.sub(/\Av/, '')
   end

@@ -56,6 +56,7 @@ graph LR
     D --> E[Changelog Generation]
     E --> F[Release Creation]
 ```
+
 ### Testing Suite Overview
 
 ```mermaid
@@ -180,15 +181,17 @@ Or bump your VERSION file by hand.
 
 ### Release
 
-`rake build`
+```bash
+$ rake build
+```
 
 This will basically regenerate the .gemspec with values from the Rakefile,
 create a tag etc.
 
 ## Author
 
-**GemHadar** was written by [Florian Frank](mailto:flori@ping.de)
+**GemHadar** was written by [Florian Frank](mailto:flori@ping.de).
 
 ## License
 
-This software is licensed under the _MIT_ license.
+This software is licensed under the [MIT](./LICENSE) license.

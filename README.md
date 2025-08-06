@@ -189,6 +189,17 @@ This command will execute a series of dependent tasks in order: cleaning
 previous builds, generating the gem specification, packaging the gem, and
 creating a git tag with the current version in git.
 
+After all the files have been changed correctly and the git tags have been
+moved forward to the appropriate commit you can finally enter:
+
+```bash
+$ rake release
+```
+
+The `rake release` command performs the final publishing steps: pushing the
+master branch and version tag to all git remotes, pushing the gem package to
+RubyGems.org, and creating a GitHub release with AI-generated changelog.
+
 ## Author
 
 **GemHadar** was written by [Florian Frank](mailto:flori@ping.de).

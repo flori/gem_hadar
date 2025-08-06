@@ -954,6 +954,18 @@ class GemHadar
     task :push => push_task_dependencies
   end
 
+  # The release_task method defines a Rake task that orchestrates the complete
+  # release process for the gem.
+  #
+  # This method sets up a :release task that depends on the :push task,
+  # ensuring all necessary steps for publishing the gem are executed in
+  # sequence. It provides a convenient way to perform a full release workflow
+  # with a single command.
+  def release_task
+    desc "Release the new version #{version} for the gem #{name}."
+    task :release => :push
+  end
+
   # The compile_task method sets up a Rake task to compile project extensions.
   #
   # This method creates a :compile task that iterates through the configured
@@ -998,33 +1010,33 @@ class GemHadar
     end
   end
 
-	def yard_doc_task
-		YARD::Rake::YardocTask.new(:yard_doc) do |t|
-			t.files = files.select { _1 =~ /\.rb\z/ }
+  def yard_doc_task
+    YARD::Rake::YardocTask.new(:yard_doc) do |t|
+      t.files = files.select { _1 =~ /\.rb\z/ }
 
-			output_dir = yard_dir
-			t.options = [ "--output-dir=#{output_dir}" ]
+      output_dir = yard_dir
+      t.options = [ "--output-dir=#{output_dir}" ]
 
-			# Include private & protected methods in documentation
-			t.options << '--private' << '--protected'
+      # Include private & protected methods in documentation
+      t.options << '--private' << '--protected'
 
-			# Handle readme if present
-			if readme && File.exist?(readme)
-				t.options << "--readme=#{readme}"
-			end
+      # Handle readme if present
+      if readme && File.exist?(readme)
+        t.options << "--readme=#{readme}"
+      end
 
-			# Add additional documentation files
-			if doc_files&.any?
-				t.files.concat(doc_files.flatten)
-			end
+      # Add additional documentation files
+      if doc_files&.any?
+        t.files.concat(doc_files.flatten)
+      end
 
-			# Add before hook for cleaning
-			t.before = proc {
-				clean output_dir
-				puts "Generating full documentation in #{output_dir}..."
-			}
-		end
-	end
+      # Add before hook for cleaning
+      t.before = proc {
+        clean output_dir
+        puts "Generating full documentation in #{output_dir}..."
+      }
+    end
+  end
 
   # The yard_task method sets up and registers Rake tasks for generating and
   # managing YARD documentation.
@@ -1035,15 +1047,15 @@ class GemHadar
   # If YARD is not available, the method returns early without defining any tasks.
   def yard_task
     defined? YARD or return
-		yard_doc_task
-		desc 'Create yard documentation (including private)'
-		task :doc => :yard_doc
+    yard_doc_task
+    desc 'Create yard documentation (including private)'
+    task :doc => :yard_doc
     namespace :yard do
       my_yard_dir = Pathname.new(yard_dir)
 
-			task :private => :yard_doc
+      task :private => :yard_doc
 
-			task :public => :yard_doc
+      task :public => :yard_doc
 
       desc 'Create yard documentation'
       task :doc => :yard_doc
@@ -1095,6 +1107,7 @@ class GemHadar
     version_bump_task
     version_tag_task
     push_task
+    release_task
     write_ignore_file
     write_gemfile
     if extensions.full?

@@ -1,4 +1,12 @@
 module GemHadar::PromptTemplate
+  # The default_git_release_system_prompt method returns the system prompt used
+  # for generating GitHub release changelogs.
+  #
+  # This prompt instructs the AI model to act as a Ruby programmer who creates
+  # markdown-formatted changelog entries for new releases. The generated
+  # content helps users understand what has changed in the software.
+  #
+  # @return [ String ] the system prompt for GitHub release changelog generation
   def default_git_release_system_prompt
     <<~EOT
       You are a Ruby programmer generating changelog messages in markdown
@@ -7,6 +15,15 @@ module GemHadar::PromptTemplate
     EOT
   end
 
+  # The default_git_release_prompt method returns the prompt used for
+  # generating GitHub release changelogs.
+  #
+  # This prompt instructs the AI model to create a markdown-formatted changelog
+  # entry for a new release. It specifies guidelines for what constitutes
+  # significant changes, emphasizing the exclusion of trivial updates
+  # and the inclusion of only verified and impactful modifications.
+  #
+  # @return [ String ] the prompt template for GitHub release changelog generation
   def default_git_release_prompt
     <<~EOT
       Output the content of a changelog for the new release of %{name} %{version}
@@ -30,6 +47,16 @@ module GemHadar::PromptTemplate
     EOT
   end
 
+  # The default_version_bump_system_prompt method returns the system prompt
+  # used for generating semantic version bump suggestions.
+  #
+  # This prompt instructs the AI model to act as an expert in semantic versioning,
+  # analyzing provided changes and determining whether a major, minor, or build
+  # version bump is appropriate. It requires the model to provide a brief
+  # explanation of its reasoning followed by a single line containing only one
+  # word: 'major', 'minor', or 'build'.
+  #
+  # @return [ String ] the system prompt for semantic version bump suggestion generation
   def default_version_bump_system_prompt
     <<~EOT
       You are an expert at semantic versioning. Analyze the provided changes
@@ -40,6 +67,16 @@ module GemHadar::PromptTemplate
     EOT
   end
 
+  # The default_version_bump_prompt method returns the prompt template used for
+  # generating semantic version bump suggestions.
+  #
+  # This prompt instructs the AI model to analyze provided changes and
+  # determine whether a major, minor, or build version bump is appropriate
+  # according to Semantic Versioning principles. It requires the model to first
+  # provide a brief explanation of its reasoning, followed by a single line
+  # containing only one word: 'major', 'minor', or 'build'.
+  #
+  # @return [ String ] the prompt template for semantic version bump suggestion generation
   def default_version_bump_prompt
     <<~EOT
       Given the current version %{version} and the following changes:

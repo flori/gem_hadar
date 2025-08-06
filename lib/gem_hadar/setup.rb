@@ -1,6 +1,10 @@
 class GemHadar::Setup
   include FileUtils
 
+  # The perform method sets up the basic project structure by creating the lib
+  # directory, initializing a VERSION file with '0.0.0' if it doesn't exist,
+  # and creating a default Rakefile with basic GemHadar configuration if one
+  # doesn't already exist.
   def perform
     mkdir_p 'lib'
     unless File.exist?('VERSION')

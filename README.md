@@ -476,7 +476,51 @@ $ rake -T
 - `rake github:release` - Create a new GitHub release for the current version
   with AI-generated changelog
 
-### Update Version
+### Code Coverage with SimpleCov
+
+To enable detailed code coverage reporting in your project using `GemHadar`,
+follow these steps:
+
+1. **Install Required Dependencies**
+
+   Ensure that `simplecov` is included in your `Gemfile`:
+
+   ```ruby
+   gem 'simplecov'
+   ```
+
+2. **Initialize Coverage in Your Test Setup**
+
+   Add this line to the top of your test helper file (e.g., `spec_helper.rb`,
+   `test_helper.rb`):
+
+   ```ruby
+   require 'gem_hadar/simplecov'
+   GemHadar::SimpleCov.start
+   ```
+
+3. **Enable Coverage Reporting**
+
+   Run tests with the environment variable `START_SIMPLECOV=1`:
+
+   ```bash
+   START_SIMPLECOV=1 bundle exec rspec
+   ```
+
+   This will generate coverage reports in both HTML and JSON formats.
+
+4. **Viewing Reports**
+
+   After running tests, you can view:
+   - **HTML Report**: `coverage/index.html`
+   - **JSON Context**: `coverage/coverage_context.json`
+
+> 🧪 *Tip:* Enable coverage reporting by setting the `START_SIMPLECOV`
+> environment variable to `1`. The JSON output includes detailed line and
+> branch coverage statistics per file, making it ideal for integration with CI
+> tools or custom dashboards.
+
+### Update Gem Version
 
 Use one of the following rake tasks to bump the version:
 

@@ -1525,19 +1525,6 @@ class GemHadar
       remotes_uris.find { |uri| uri.hostname == 'github.com' }
     end
   end
-
-  class << self
-    # The start_simplecov method initializes SimpleCov and configures it to
-    # ignore coverage data from the directory containing the caller. This can be
-    # called from a test or spec helper.
-    def start_simplecov
-      defined? SimpleCov or return
-      filter = "#{File.basename(File.dirname(caller.first))}/"
-      SimpleCov.start do
-        add_filter filter
-      end
-    end
-  end
 end
 
 def GemHadar(&block)

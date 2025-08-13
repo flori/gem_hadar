@@ -441,7 +441,7 @@ class GemHadar
           end
         end
         unless from_version
-          fail "Could not find version before #{to_version.inspect}."
+          return `git log -p #{version_tag(to_version)}`
         end
       else
         unless versions.find { |v| v == from_version }

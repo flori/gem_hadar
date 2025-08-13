@@ -101,62 +101,263 @@ class GemHadar
     fail "#{self.class}: #{name} has to be set for gem"
   end
 
+  # The developing attribute accessor for configuring development mode.
+  #
+  # This method sets up a DSL accessor for the developing attribute, which
+  # controls whether the gem is in development mode. When set to true, certain
+  # behaviors such as skipping gem pushes are enabled as well as asserting the
+  # validity of the homepage link.
+  #
+  # @return [ Boolean ] the current value of the developing flag
   dsl_accessor :developing, false
 
+  # The name attribute accessor for configuring the gem's name.
+  #
+  # This method sets up a DSL accessor for the name attribute, which specifies
+  # the identifier for the gem. It includes a validation step that raises an
+  # ArgumentError if the name has not been set, ensuring that the gem
+  # configuration contains a required name value.
+  #
+  # @return [ String ] the name of the gem
+  #
+  # @raise [ ArgumentError ] if the name attribute has not been set
   dsl_accessor :name do
     has_to_be_set :name
   end
 
+  # The name_version method computes and returns the combined gem name and
+  # version string.
+  #
+  # This method constructs a version identifier by joining the gem's name and
+  # current version with a hyphen separator. It is typically used to generate
+  # filenames or identifiers that incorporate both the gem name and its version
+  # number for packaging, tagging, or display purposes.
+  #
+  # @return [ String ] the combined gem name and version in the format "name-version"
   dsl_accessor :name_version do
     [ name, version ] * '-'
   end
 
+  # The module_type attribute accessor for configuring the type of Ruby construct to generate for version code.
+  #
+  # This method sets up a DSL accessor for the module_type attribute, which determines whether the generated code
+  # structure for the version module should be a :module or :class. This controls the type of Ruby construct
+  # created when generating code skeletons and version files. The value can be set to either:
+  #
+  # - :module (default) - Generates module-based structure
+  # - :class - Generates class-based structure
+  #
+  # This is used in the generated version.rb file to create either:
+  #
+  #   module MyGem
+  #     # ... version constants
+  #   end
+  #
+  # or
+  #
+  #   class MyGem
+  #     # ... version constants
+  #   end
+  #
+  # @return [ Symbol ] the type of Ruby construct to generate (:module or :class)
   dsl_accessor :module_type, :module
 
+  # The has_to_be_set method raises an error if a required gem configuration
+  # attribute is not set.
+  #
+  # This method is used to validate that essential gem configuration attributes
+  # have been provided. When called, it will raise an ArgumentError with a
+  # descriptive message indicating which attribute is missing and needs to be
+  # configured.
+  #
+  # @param name [ String ] the name of the required attribute
+  #
+  # @raise [ ArgumentError ] if the specified attribute has not been set
   dsl_accessor :author do
     has_to_be_set :author
   end
 
+  # The email attribute accessor for configuring the gem's author email.
+  #
+  # This method sets up a DSL accessor for the email attribute, which specifies
+  # the contact email address for the gem's author. It includes a
+  # validation step that raises an ArgumentError if the email has not been
+  # set, ensuring that the gem configuration contains this required
+  # information.
+  #
+  # @return [ String ] the author's email address
+  #
+  # @raise [ ArgumentError ] if the email attribute has not been set
   dsl_accessor :email do
     has_to_be_set :email
   end
 
+  # The homepage attribute accessor for configuring the gem's homepage URL.
+  #
+  # This method sets up a DSL accessor for the homepage attribute, which
+  # specifies the URL of the gem's official repository or project page. It
+  # includes a validation step that raises an ArgumentError if the homepage has
+  # not been set, ensuring that the gem configuration contains this required
+  # information. When the developing flag is false, it also validates that the
+  # provided URL returns an HTTP OK status after following redirects.
+  #
+  # @return [ String ] the homepage URL of the gem
+  #
+  # @raise [ ArgumentError ] if the homepage attribute has not been set
+  # @raise [ ArgumentError ] if the homepage URL is invalid and developing mode is disabled
   dsl_accessor :homepage do
     has_to_be_set :homepage
   end
 
+  # The summary attribute accessor for configuring the gem's summary.
+  #
+  # This method sets up a DSL accessor for the summary attribute, which
+  # specifies a brief description of what the gem does. It includes a
+  # validation step that raises an ArgumentError if the summary has not been
+  # set, ensuring that the gem configuration contains this required
+  # information.
+  #
+  # @return [ String ] the summary of the gem
+  #
+  # @raise [ ArgumentError ] if the summary attribute has not been set
   dsl_accessor :summary do
     has_to_be_set :summary
   end
 
-  dsl_accessor :description do
-    has_to_be_set :description
-  end
+  # The description attribute accessor for configuring the gem's description.
+  #
+  # This method sets up a DSL accessor for the description attribute, which
+  # specifies the detailed explanation of what the gem does. It includes a
+  # validation step that raises an ArgumentError if the description has not
+  # been set, ensuring that the gem configuration contains this required
+  # information.
+  #
+  # @return [ String ] the description of the gem
+  #
+  # @raise [ ArgumentError ] if the description attribute has not been set
+  dsl_accessor :description do has_to_be_set :description end
 
+  # The require_paths attribute accessor for configuring the gem's require
+  # paths.
+  #
+  # This method sets up a DSL accessor for the require_paths attribute, which
+  # specifies the directories from which the gem's code can be loaded. It
+  # provides a way to define the locations of the library files that will be
+  # made available to users of the gem when it is required in Ruby programs.
+  #
+  # @return [ Set<String> ] a set of directory paths to be included in the load
+  # path
   dsl_accessor :require_paths do Set['lib'] end
 
+  # The require_path method manages the gem's require path configuration.
+  #
+  # This method provides functionality to set or retrieve the directory paths
+  # from which the gem's code can be loaded. When called with a path argument,
+  # it updates the require_paths attribute with that path and returns it.
+  # When called without arguments, it returns the first path from the current
+  # require_paths set.
+  #
+  # @param path [ String, nil ] the directory path to set as the require path;
+  #                           if nil, returns the current first require path
+  #
+  # @return [ String ] the specified path when setting, or the first require
+  # path when retrieving
   def require_path(path = nil)
     if path
       self.require_paths = Set[path]
+      path
     else
       require_paths.first
     end
   end
 
+  # The readme attribute accessor for configuring the gem's README file.
+  #
+  # This method sets up a DSL accessor for the readme attribute, which specifies
+  # the path to the README file for the gem. It provides a way to define the
+  # location of the README file that will be used in documentation and packaging
+  # processes.
+  #
+  # @return [ String, nil ] the path to the README file or nil if not set
   dsl_accessor :readme
 
+  # The title attribute accessor for configuring the gem's documentation title.
+  #
+  # This method sets up a DSL accessor for the title attribute, which specifies
+  # the title to be used in the generated YARD documentation. It provides a way
+  # to define a custom title that will be included in the documentation output,
+  # making it easier to identify and reference the gem's documentation.
+  #
+  # @return [ String, nil ] the documentation title or nil if not set
   dsl_accessor :title
 
+  # The ignore_files attribute accessor for configuring files to be ignored by
+  # the gem.
+  #
+  # This method sets up a DSL accessor for the ignore_files attribute, which
+  # specifies a set of file patterns that should be excluded from various gem
+  # operations and processing tasks. It provides a way to define ignore rules
+  # that apply broadly across the gem's functionality, including but not
+  # limited to build processes, documentation generation, and version control
+  # integration.
+  #
+  # @return [ Set<String> ] a set of file patterns to be ignored by the gem's operations
   dsl_accessor :ignore_files do Set[] end
 
-  dsl_accessor :test_dir
-
+  # The bindir attribute accessor for configuring the gem's binary directory.
+  #
+  # This method sets up a DSL accessor for the bindir attribute, which specifies
+  # the directory where executable scripts (binaries) are installed when the gem
+  # is packaged and installed. It provides a way to define the location of the
+  # bin directory that will contain the gem's executable files.
+  #
+  # @return [ String, nil ] the path to the binary directory or nil if not set
   dsl_accessor :bindir
 
+  # The executables attribute accessor for configuring the gem's executable
+  # files.
+  #
+  # This method sets up a DSL accessor for the executables attribute, which
+  # specifies the list of executable scripts that should be installed as part
+  # of the gem. It provides a way to define one or more executable file names
+  # that will be made available in the gem's bin directory when the gem is
+  # installed.
+  #
+  # @return [ Set<String> ] a set of executable file names to be included with
+  # the gem
   dsl_accessor :executables do Set[] end
 
+  # The licenses attribute accessor for configuring the gem's license
+  # information.
+  #
+  # This method sets up a DSL accessor for the licenses attribute, which
+  # specifies the license(s) under which the gem is distributed. It provides a
+  # way to define one or more licenses that apply to the gem, defaulting to an
+  # empty Set if none are explicitly configured.
+  #
+  # @return [ Set<String> ] a set of license identifiers applied to the gem
   dsl_accessor :licenses do Set[] end
 
+  # The test_dir attribute accessor for configuring the test directory.
+  #
+  # This method sets up a DSL accessor for the test_dir attribute, which specifies
+  # the directory where test files are located. It provides a way to define the
+  # location of the test directory that will be used by various testing tasks and
+  # configurations within the gem project.
+  #
+  # @return [ String, nil ] the path to the test directory or nil if not set
+  dsl_accessor :test_dir
+
+  # The test_files attribute accessor for configuring the list of test files to
+  # be included in the gem package.
+  #
+  # This method sets up a DSL accessor for the test_files attribute, which
+  # specifies the files that should be included when running tests for the gem.
+  # It provides a way to customize the test file discovery process, defaulting
+  # to finding all Ruby files ending in _spec.rb within the spec directory and
+  # its subdirectories.
+  #
+  # @return [ FileList ] a list of file paths to be included in test execution
   dsl_accessor :test_files do
     if test_dir
       FileList[File.join(test_dir, '**/*.rb')]
@@ -165,8 +366,28 @@ class GemHadar
     end
   end
 
+  # The spec_dir attribute accessor for configuring the RSpec specification
+  # directory.
+  #
+  # This method sets up a DSL accessor for the spec_dir attribute, which
+  # specifies the directory where RSpec test files are located. It provides a
+  # way to customize the location of test specifications separate from the
+  # default 'spec' directory, allowing for more flexible project structures.
+  #
+  # @return [ String, nil ] the path to the RSpec specification directory or
+  # nil if not set
   dsl_accessor :spec_dir
 
+  # The spec_pattern method configures the pattern used to locate RSpec test
+  # files.
+  #
+  # This method sets up a DSL accessor for the spec_pattern attribute, which
+  # defines the file pattern used to discover RSpec test files in the project.
+  # It defaults to a standard pattern that looks for files ending in _spec.rb
+  # within the spec directory and its subdirectories, but can be customized
+  # through the configuration block.
+  #
+  # @return [ String ] the file pattern used to locate RSpec test files
   dsl_accessor :spec_pattern do
     if spec_dir
       "#{spec_dir}{,/*/**}/*_spec.rb"
@@ -175,32 +396,123 @@ class GemHadar
     end
   end
 
+  # The doc_files attribute accessor for configuring additional documentation
+  # files.
+  #
+  # This method sets up a DSL accessor for the doc_files attribute, which
+  # specifies additional files to be included in the YARD documentation
+  # generation process. It defaults to an empty FileList and provides a way to
+  # define extra documentation files that should be processed alongside the
+  # standard library source files.
+  #
+  # @return [ FileList ] a list of file paths to be included in YARD
+  # documentation
   dsl_accessor :doc_files do
     FileList[File.join('lib/**/*.rb')] + FileList[File.join('ext/**/*.c')]
   end
 
+  # The yard_dir attribute accessor for configuring the output directory for
+  # YARD documentation.
+  #
+  # This method sets up a DSL accessor for the yard_dir attribute, which
+  # specifies the directory where YARD documentation will be generated. It
+  # defaults to 'doc' and provides a way to customize the documentation output
+  # location through the configuration block.
+  #
+  # @return [ String ] the path to the directory where YARD documentation will be stored
   dsl_accessor :yard_dir do
     'doc'
   end
 
+  # The extensions attribute accessor for configuring project extensions.
+  #
+  # This method sets up a DSL accessor for the extensions attribute, which
+  # specifies the list of extension configuration files (typically extconf.rb)
+  # that should be compiled when building the gem. It defaults to finding all
+  # extconf.rb files within the ext directory and its subdirectories, making it
+  # easy to include native extensions in the gem package.
+  #
+  # @return [ FileList ] a list of file paths to extension configuration files
+  #                      to be compiled during the build process
   dsl_accessor :extensions do FileList['ext/**/extconf.rb'] end
 
+  # The make method retrieves the make command to be used for building
+  # extensions.
+  #
+  # This method determines the appropriate make command to use when compiling
+  # project extensions. It first checks for the MAKE environment variable and
+  # returns its value if set. If the environment variable is not set, it
+  # attempts to detect a suitable make command by testing for the existence of
+  # 'gmake' and 'make' in the system PATH.
+  #
+  # @return [ String, nil ] the make command name or nil if none found
   dsl_accessor :make do
     ENV['MAKE'] || %w[gmake make].find { |c| system(c, '-v') }
   end
 
+  # The files attribute accessor for configuring the list of files included in
+  # the gem package.
+  #
+  # This method sets up a DSL accessor for the files attribute, which specifies
+  # the complete set of files that should be included when building the gem
+  # package. It defaults to retrieving the file list from Git using `git
+  # ls-files` and provides a way to override this behavior through the
+  # configuration block.
+  #
+  # @return [ Array<String> ] an array of file paths to be included in the gem package
   dsl_accessor :files do
     `git ls-files`.split("\n")
   end
 
+  # The package_ignore_files attribute accessor for configuring files to be
+  # ignored during gem packaging.
+  #
+  # This method sets up a DSL accessor for the package_ignore_files attribute,
+  # which specifies file patterns that should be excluded from the gem package
+  # when it is built. It defaults to an empty set and provides a way to define
+  # ignore rules specific to the packaging process, separate from general
+  # project ignore rules.
+  #
+  # @return [ Set<String> ] a set of file patterns to be ignored during gem packaging
   dsl_accessor :package_ignore_files do
     Set[]
   end
 
+  # The path_name attribute accessor for configuring the gem's path name.
+  #
+  # This method sets up a DSL accessor for the path_name attribute, which
+  # determines the raw gem name value used for generating file paths and module
+  # names. It defaults to the value of the name attribute and is particularly
+  # useful for creating consistent directory structures and file naming
+  # conventions. This value is used internally by GemHadar to create the root
+  # directory for the gem and generate a version.rb file in that location.
+  #
+  # @return [ String ] the path name derived from the gem's name
   dsl_accessor :path_name do name end
 
+  # The path_module attribute accessor for configuring the Ruby module name.
+  #
+  # This method sets up a DSL accessor for the path_module attribute, which
+  # determines the camelized version of the gem's name to be used as the Ruby
+  # module or class name. It automatically converts the value of path_name
+  # into CamelCase format, ensuring consistency with Ruby naming conventions
+  # for module and class declarations.
+  #
+  # @return [ String ] the camelized module name derived from path_name
   dsl_accessor :path_module do path_name.camelize end
 
+  # The version attribute accessor for configuring the gem's version.
+  #
+  # This method sets up a DSL accessor for the version attribute, which
+  # specifies the version number of the gem. It includes logic to determine the
+  # version from the VERSION file or an environment variable override, and will
+  # raise an ArgumentError if the version has not been set and cannot be
+  # determined.
+  #
+  # @return [ String ] the version of the gem
+  #
+  # @raise [ ArgumentError ] if the version attribute has not been set and
+  #                           cannot be read from the VERSION file or ENV override
   dsl_accessor :version do
     v = ENV['VERSION'].full? and next v
     File.read('VERSION').chomp
@@ -208,10 +520,37 @@ class GemHadar
     has_to_be_set :version
   end
 
+  # The version_epilogue attribute accessor for configuring additional content
+  # to be appended to the version file.
+  #
+  # This method sets up a DSL accessor for the version_epilogue attribute,
+  # which specifies extra content to be included at the end of the generated
+  # version file. This can be useful for adding custom comments, license
+  # information, or other supplementary data to the version module or class.
+  #
+  # @return [ String, nil ] the epilogue content or nil if not set
   dsl_accessor :version_epilogue
 
+  # The post_install_message attribute accessor for configuring a message to
+  # display after gem installation.
+  #
+  # This method sets up a DSL accessor for the post_install_message attribute,
+  # which specifies a message to be displayed to users after the gem is installed.
+  # This can be useful for providing additional information, usage instructions,
+  # or important warnings to users of the gem.
+  #
+  # @return [ String, nil ] the post-installation message or nil if not set
   dsl_accessor :post_install_message
 
+  # The required_ruby_version attribute accessor for configuring the minimum
+  # Ruby version requirement.
+  #
+  # This method sets up a DSL accessor for the required_ruby_version attribute,
+  # which specifies the minimum version of Ruby that the gem requires to run.
+  # It allows defining the Ruby version constraint that will be included in the
+  # gem specification.
+  #
+  # @return [ String, nil ] the required Ruby version string or nil if not set
   dsl_accessor :required_ruby_version
 
   # A class that encapsulates Ruby Version Manager (RVM) configuration settings
@@ -233,13 +572,39 @@ class GemHadar
     extend DSLKit::DSLAccessor
     include DSLKit::BlockSelf
 
+    # The initialize method sets up the RvmConfig instance by evaluating the
+    # provided block in the context of the object.
+    #
+    # @param block [ Proc ] the block to be evaluated for configuring the RVM settings
+    #
+    # @return [ GemHadar::RvmConfig ] the initialized RvmConfig instance
     def initialize(&block)
       @outer_scope = block_self(&block)
       instance_eval(&block)
     end
 
+    # The use method retrieves or sets the Ruby version to be used with RVM.
+    #
+    # This method serves as an accessor for the Ruby version configuration
+    # within the RVM (Ruby Version Manager) settings. When called without
+    # arguments, it returns the configured Ruby version. When called with
+    # an argument, it sets the Ruby version to be used.
+    #
+    # @return [ String ] the Ruby version string configured for RVM use
+    # @see GemHadar::RvmConfig
     dsl_accessor :use do `rvm tools strings`.split(/\n/).full?(:last) || 'ruby' end
 
+    # The gemset method retrieves or sets the RVM gemset name for the project.
+    #
+    # This method serves as an accessor for the RVM (Ruby Version Manager)
+    # gemset configuration within the nested RvmConfig class. When called
+    # without arguments,
+    # it returns the configured gemset name, which defaults to the gem's name.
+    # When called with an argument, it sets the gemset name to be used with RVM.
+    #
+    # @return [ String ] the RVM gemset name configured for the project
+    # @see GemHadar::RvmConfig#use
+    # @see GemHadar::RvmConfig
     dsl_accessor :gemset do @outer_scope.name end
   end
 
@@ -264,6 +629,17 @@ class GemHadar
     @rvm
   end
 
+  # The default_task_dependencies method manages the list of dependencies for
+  # the default Rake task.
+  #
+  # This method sets up a DSL accessor for the default_task_dependencies
+  # attribute, which specifies the sequence of Rake tasks that must be executed
+  # when running the default task. These dependencies typically include
+  # generating the gem specification and running tests to ensure a consistent
+  # starting point for development workflows.
+  #
+  # @return [ Array<Symbol, String> ] an array of task names that are required
+  #                                   as dependencies for the default task execution
   dsl_accessor :default_task_dependencies, [ :gemspec, :test ]
 
   # The default_task method defines the default Rake task for the gem project.
@@ -277,6 +653,17 @@ class GemHadar
     task :default => default_task_dependencies
   end
 
+  # The build_task_dependencies method manages the list of dependencies for the
+  # build task.
+  #
+  # This method sets up a DSL accessor for the build_task_dependencies
+  # attribute, which specifies the sequence of Rake tasks that must be executed
+  # when running the build task. These dependencies typically include cleaning
+  # previous builds, generating the gem specification, packaging the gem, and
+  # creating a version tag.
+  #
+  # @return [ Array<Symbol, String> ] an array of task names that are required
+  #                                   as dependencies for the build task execution
   dsl_accessor :build_task_dependencies, [ :clobber, :gemspec, :package, :'version:tag' ]
 
   # The build_task method defines a Rake task that orchestrates the complete
@@ -981,6 +1368,16 @@ class GemHadar
     end
   end
 
+  # The push_task_dependencies method manages the list of dependencies for the push task.
+  #
+  # This method sets up a DSL accessor for the push_task_dependencies attribute,
+  # which specifies the sequence of Rake tasks that must be executed when running
+  # the push task. These dependencies typically include checks for modified files,
+  # building the gem, pushing to remote repositories, and publishing to package
+  # managers like RubyGems and GitHub.
+  #
+  # @return [ Array<Symbol, String> ] an array of task names that are required
+  #                                   as dependencies for the push task execution
   dsl_accessor :push_task_dependencies, %i[ modified build master:push version:push gem:push github:release ]
 
   # The push_task method defines a Rake task that orchestrates the complete
@@ -1276,26 +1673,12 @@ class GemHadar
   ensure
     temp_file&.close&.unlink
   end
-  def edit_temp_file(content)
-    editor = ENV.fetch('EDITOR', `which vi`.chomp)
-    unless File.exist?(editor)
-      warn "Can't find EDITOR. => Returning."
-      return
-    end
-    temp_file = Tempfile.new(%w[ changelog .md ])
-    temp_file.write(content)
-    temp_file.close
 
-    unless system("#{editor} #{temp_file.path}")
-      warn "#{editor} returned #{$?.exitstatus} => Returning."
-      return
-    end
-
-    File.read(temp_file.path)
-  ensure
-    temp_file&.close&.unlink
-  end
-
+  # The ollama_model_default method returns the default name of the Ollama AI
+  # model to be used for generating responses when no custom model is
+  # specified.
+  #
+  # @return [ String ] the default Ollama AI model name, which is 'llama3.1'
   dsl_accessor :ollama_model_default, 'llama3.1'.freeze
 
   # The ollama_model method retrieves the name of the Ollama AI model to be

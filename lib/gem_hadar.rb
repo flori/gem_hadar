@@ -1197,7 +1197,7 @@ class GemHadar
       warn "Can't find EDITOR. => Returning."
       return
     end
-    temp_file = Tempfile.new('changelog')
+    temp_file = Tempfile.new('changelog.md')
     temp_file.write(content)
     temp_file.close
 

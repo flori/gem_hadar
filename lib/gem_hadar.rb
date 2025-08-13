@@ -1190,14 +1190,44 @@ class GemHadar
   # content, opens it in an editor for user modification, and returns the
   # updated content.
   #
-  # @param content [ String ] the initial content to write to the temporary file
+  # This method first determines the editor to use from the EDITOR environment
+  # variable or defaults to vi. If the editor cannot be found, it issues a
+  # warning and returns nil. It then creates a temporary file, writes the
+  # initial content to it, and opens the file in the editor. After the user
+  # saves and closes the editor, it reads the modified content from the
+  # temporary file. The temporary file is automatically cleaned up after use.
+  #
+  # @param content [ String ] the initial content to write to the temporary
+  # file
+  #
+  # @return [ String, nil ] the content of the temporary file after editing, or
+  # nil if the editor could not be found or failed
   def edit_temp_file(content)
     editor = ENV.fetch('EDITOR', `which vi`.chomp)
     unless File.exist?(editor)
       warn "Can't find EDITOR. => Returning."
       return
     end
-    temp_file = Tempfile.new('changelog.md')
+    temp_file = Tempfile.new(%w[ changelog .md ])
+    temp_file.write(content)
+    temp_file.close
+
+    unless system("#{editor} #{temp_file.path}")
+      warn "#{editor} returned #{$?.exitstatus} => Returning."
+      return
+    end
+
+    File.read(temp_file.path)
+  ensure
+    temp_file&.close&.unlink
+  end
+  def edit_temp_file(content)
+    editor = ENV.fetch('EDITOR', `which vi`.chomp)
+    unless File.exist?(editor)
+      warn "Can't find EDITOR. => Returning."
+      return
+    end
+    temp_file = Tempfile.new(%w[ changelog .md ])
     temp_file.write(content)
     temp_file.close
 

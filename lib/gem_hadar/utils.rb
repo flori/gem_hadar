@@ -1,5 +1,19 @@
 require 'pathname'
 
+# A module that provides utility methods for handling XDG Base Directory
+# specification compliance.
+#
+# This module offers functionality to determine the appropriate configuration
+# directory based on the XDG Base Directory specification, construct paths for
+# configuration files, and retrieve configuration data from those files. It
+# helps ensure consistent and standardized handling of user configuration files
+# across different operating systems.
+#
+# @example Determining the XDG configuration directory
+#   config_dir = GemHadar::Utils.xdg_config_home
+#
+# @example Retrieving configuration file contents
+#   config_content = GemHadar::Utils.xdg_config('myapp', 'default_value')
 module GemHadar::Utils
   # The xdg_config_home method determines the path to the XDG configuration
   # directory.

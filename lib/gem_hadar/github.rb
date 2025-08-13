@@ -4,6 +4,26 @@ require 'json'
 module GemHadar::GitHub
 end
 
+# A client for creating GitHub releases via the GitHub API.
+#
+# This class provides functionality to interact with the GitHub Releases API,
+# enabling the creation of new releases for a specified repository. It handles
+# the HTTP request setup, including appropriate headers and authentication,
+# and processes the API response to either return the created release data or
+# raise an error if the creation fails.
+#
+# @example Creating a release
+#   creator = GemHadar::GitHub::ReleaseCreator.new(
+#     owner: 'myorg',
+#     repo: 'myrepo',
+#     token: 'ghp_mytoken'
+#   )
+#   release_data = creator.perform(
+#     tag_name: 'v1.0.0',
+#     target_commitish: 'main',
+#     body: 'Release notes here',
+#     name: 'Version 1.0.0'
+#   )
 class GemHadar::GitHub::ReleaseCreator
   class << self
     attr_accessor :github_api_url

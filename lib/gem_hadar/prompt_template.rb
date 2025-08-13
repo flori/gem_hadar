@@ -1,3 +1,11 @@
+# A module that provides default prompt templates for interacting with AI models
+# when generating GitHub release changelogs and semantic version bump suggestions.
+#
+# This module contains methods that return system prompts and template strings
+# used by the GemHadar framework to instruct AI models on how to format
+# responses for release notes and versioning decisions. These prompts are
+# designed to produce structured, relevant output that aligns with
+# development workflow requirements.
 module GemHadar::PromptTemplate
   # The default_git_release_system_prompt method returns the system prompt used
   # for generating GitHub release changelogs.

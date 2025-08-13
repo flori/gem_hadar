@@ -1,3 +1,14 @@
+# A class that handles the initialization and setup of a new gem project
+# structure.
+#
+# This class is responsible for creating the basic directory layout and
+# configuration files needed for a Ruby gem project. It ensures that essential
+# components like the lib directory, VERSION file, and Rakefile are in place,
+# providing a solid foundation for gem development.
+#
+# @example Setting up a new gem project
+#   setup = GemHadar::Setup.new
+#   setup.perform
 class GemHadar::Setup
   include FileUtils
 

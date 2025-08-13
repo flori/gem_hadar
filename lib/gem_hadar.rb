@@ -22,6 +22,40 @@ require_maybe 'simplecov'
 require_maybe 'rubygems/package_task'
 require_maybe 'rcov/rcovtask'
 require_maybe 'rspec/core/rake_task'
+
+# A brief description of the GemHadar class.
+#
+# The GemHadar class serves as the primary configuration and task management
+# framework for Ruby gem projects. It provides a DSL for defining gem metadata,
+# dependencies, and Rake tasks, while also offering integration with various
+# tools such as GitHub, SimpleCov, YARD, and Ollama for automating common
+# development workflows.
+#
+# @example Configuring a gem using the GemHadar DSL
+#   GemHadar do
+#     name        'my_gem'
+#     version     '1.0.0'
+#     author      'John Doe'
+#     email       'john@example.com'
+#     homepage    'https://github.com/example/my_gem'
+#     summary     'A brief description'
+#     description 'A longer description of the gem'
+#     test_dir    'spec'
+#   end
+#
+# @example Creating a Rake task for building and packaging the gem
+#   GemHadar do
+#     name 'my_gem'
+#     # ... other configuration ...
+#     build_task
+#   end
+#
+# @example Setting up version bumping with AI assistance
+#   GemHadar do
+#     name 'my_gem'
+#     # ... other configuration ...
+#     version_bump_task
+#   end
 class GemHadar
 end
 require 'gem_hadar/version'
@@ -45,6 +79,12 @@ class GemHadar
   extend DSLKit::DSLAccessor
   include Tins::SecureWrite
 
+  # The initialize method sets up the GemHadar instance by initializing
+  # dependency arrays and evaluating a configuration block.
+  #
+  # @param block [Proc] optional configuration block to set gem properties and settings
+  #
+  # @return [GemHadar] the initialized GemHadar instance
   def initialize(&block)
     @dependencies = []
     @development_dependencies = []
@@ -174,6 +214,21 @@ class GemHadar
 
   dsl_accessor :required_ruby_version
 
+  # A class that encapsulates Ruby Version Manager (RVM) configuration settings
+  # for a gem project.
+  #
+  # This class is responsible for managing RVM-specific configuration such as
+  # the Ruby version to use and the gemset name. It provides a structured way
+  # to define and access these settings within the context of a GemHadar
+  # configuration.
+  #
+  # @example Configuring RVM settings
+  #   GemHadar do
+  #     rvm do
+  #       use '3.0.0'
+  #       gemset 'my_gem_dev'
+  #     end
+  #   end
   class RvmConfig
     extend DSLKit::DSLAccessor
     include DSLKit::BlockSelf
@@ -1557,10 +1612,33 @@ class GemHadar
   end
 end
 
+# The GemHadar method serves as the primary entry point for configuring and
+# initializing a gem project using the GemHadar framework.
+#
+# This method creates a new instance of the GemHadar class, passes the provided
+# block to configure the gem settings, and then invokes the create_all_tasks
+# method to set up all the necessary Rake tasks for the project.
+#
+# @param block [ Proc ] a configuration block used to define gem properties and settings
+#
+# @return [ GemHadar ] the configured GemHadar instance after all tasks have been created
 def GemHadar(&block)
   GemHadar.new(&block).create_all_tasks
 end
 
+# The template method processes an ERB template file and creates a Rake task
+# for its compilation.
+#
+# This method takes a template file path, removes its extension to determine
+# the output file name, and sets up a Rake file task that compiles the template
+# using the provided block configuration. It ensures the source file has an
+# extension and raises an error if not.
+#
+# @param pathname [ String ] the path to the template file to be processed
+#
+# @yield [ block ] the configuration block for the template compiler
+#
+# @return [ Pathname ] the Pathname object representing the destination file path
 def template(pathname, &block)
   template_src = Pathname.new(pathname)
   template_dst = template_src.sub_ext('') # ignore ext, we just support erb anyway

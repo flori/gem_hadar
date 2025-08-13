@@ -6,7 +6,32 @@ require 'pathname'
 class GemHadar
 end
 
+# A module that provides SimpleCov-related functionality for code coverage
+# analysis.
+#
+# This module encapsulates the setup and configuration of SimpleCov for Ruby
+# projects, including initialization, formatter selection, and warning message
+# handling. It integrates with the GemHadar framework to provide detailed
+# coverage reporting capabilities while maintaining consistent output
+# formatting and error handling.
+#
+# @example Initializing SimpleCov with GemHadar GemHadar::SimpleCov.start
 module GemHadar::SimpleCov
+  # A module that provides warning functionality with colored output.
+  #
+  # This module enhances the standard warn method to display warning messages
+  # in orange color, making them more visible in terminal outputs. It is
+  # designed to be included in classes that need consistent warning message
+  # formatting throughout the application.
+  #
+  # @example Using the warn method from this module
+  #   class MyClass
+  #     include GemHadar::SimpleCov::WarnModule
+  #
+  #     def my_method
+  #       warn "This is a warning message"
+  #     end
+  #   end
   module WarnModule
     # The warn method displays warning messages using orange colored output.
     #
@@ -23,6 +48,19 @@ module GemHadar::SimpleCov
     end
   end
 
+  # A formatter class that generates detailed JSON coverage reports from
+  # SimpleCov results.
+  #
+  # This class is responsible for processing code coverage data produced by
+  # SimpleCov and transforming it into a structured JSON format that includes
+  # both line and branch coverage statistics for individual files, as well as
+  # overall project coverage metrics. It calculates various percentages and
+  # counts, then writes the complete coverage data to a dedicated JSON file in
+  # the coverage directory.
+  #
+  # @example Using the ContextFormatter to generate coverage reports
+  #   formatter = GemHadar::SimpleCov::ContextFormatter.new
+  #   formatter.format(simplecov_result)
   class ContextFormatter
     include FileUtils
 

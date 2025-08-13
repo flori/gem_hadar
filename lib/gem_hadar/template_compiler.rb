@@ -1,5 +1,19 @@
 require 'erb'
 
+# A class for compiling ERB template files into their final output
+# representations.
+#
+# The TemplateCompiler class provides functionality to process ERB templates,
+# substituting placeholders with actual values from a configuration block. It
+# handles the reading of template files, rendering them with the provided
+# context, and writing the resulting content to specified destination files.
+#
+# @example Compiling a template file
+#   compiler = GemHadar::TemplateCompiler.new do |t|
+#     t.name = 'my_template'
+#     t.version = '1.0.0'
+#   end
+#   compiler.compile('template.erb', 'output.txt')
 class GemHadar::TemplateCompiler
   include Tins::BlockSelf
   include Tins::MethodMissingDelegator::DelegatorModule

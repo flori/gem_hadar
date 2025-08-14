@@ -33,6 +33,7 @@ module GemHadar::SimpleCov
   #     end
   #   end
   module WarnModule
+    include Term::ANSIColor
     # The warn method displays warning messages using orange colored output.
     #
     # This method takes an array of message strings, applies orange color

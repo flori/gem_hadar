@@ -1869,25 +1869,6 @@ class GemHadar
     end
   end
 
-  # The warn method displays warning messages using orange colored output.
-  #
-  # @param msgs [Array<String>] the array of message strings to display
-  def warn(*msgs)
-    msgs.map! { |m| color(208) { m } }
-    super(*msgs, uplevel: 1)
-  end
-
-  # The fail method formats and displays failure messages using red colored
-  # output.
-  #
-  # @param args [Array] the array of arguments to be formatted and passed to super
-  def fail(*args)
-    args.map! do |a|
-      a.respond_to?(:to_str) ? color(196) { a.to_str } : a
-    end
-    super(*args)
-  end
-
   # The git_remotes method retrieves the list of remote repositories configured
   # for the current Git project.
   #

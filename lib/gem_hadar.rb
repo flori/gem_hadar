@@ -60,15 +60,18 @@ class GemHadar
 end
 require 'gem_hadar/version'
 require 'gem_hadar/utils'
+require 'gem_hadar/warn'
 require 'gem_hadar/setup'
 require 'gem_hadar/template_compiler'
 require 'gem_hadar/github'
 require 'gem_hadar/prompt_template'
+require 'gem_hadar/changes'
 
 class GemHadar
   include Term::ANSIColor
   include GemHadar::Utils
   include GemHadar::PromptTemplate
+  include GemHadar::Warn
 
   if defined?(::RbConfig)
     include ::RbConfig

@@ -78,7 +78,7 @@ module GemHadar::SimpleCov
           covered_branches: result.covered_branches,
           missed_branches: result.missed_branches,
           coverage_strength: result.covered_strength.round(2),
-          least_covered_file: result.least_covered_file,
+          least_covered_file: (result.least_covered_file rescue nil),
           covered_files:,
           uncovered_files:,
           files_count:,

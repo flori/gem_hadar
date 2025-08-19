@@ -65,7 +65,6 @@ require 'gem_hadar/setup'
 require 'gem_hadar/template_compiler'
 require 'gem_hadar/github'
 require 'gem_hadar/prompt_template'
-require 'gem_hadar/changes'
 
 class GemHadar
   include Term::ANSIColor

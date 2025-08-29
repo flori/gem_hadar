@@ -1,6 +1,6 @@
 class GemHadar
   # GemHadar version
-  VERSION         = '2.1.1'
+  VERSION         = '2.2.0'
   VERSION_ARRAY   = VERSION.split('.').map(&:to_i) # :nodoc:
   VERSION_MAJOR   = VERSION_ARRAY[0] # :nodoc:
   VERSION_MINOR   = VERSION_ARRAY[1] # :nodoc:

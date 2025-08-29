@@ -149,17 +149,41 @@ module GemHadar::SimpleCov
   class << self
     include Term::ANSIColor
 
+    # The default_block method returns a lambda that configures SimpleCov with
+    # branch coverage and multiple formatters.
+    #
+    # This method constructs a default configuration block for SimpleCov that
+    # enables branch coverage, adds a filter based on the caller's directory,
+    # and sets up a multi-formatter including SimpleFormatter, HTMLFormatter,
+    # and a custom ContextFormatter.
+    #
+    # @return [ Proc ] a lambda configuring SimpleCov with coverage settings
+    # and formatters
+    def default_block
+      filter = "#{File.basename(File.dirname(caller.first))}/"
+      -> {
+        enable_coverage :branch
+        add_filter filter
+        formatter SimpleCov::Formatter::MultiFormatter.new([
+          SimpleCov::Formatter::SimpleFormatter,
+          SimpleCov::Formatter::HTMLFormatter,
+          GemHadar::SimpleCov::ContextFormatter,
+        ])
+      }
+    end
+
     # The start method initializes and configures SimpleCov for code coverage
     # analysis.
     #
-    # This method checks if the START_SIMPLECOV environment variable is set to
-    # 1 before proceeding with SimpleCov setup. If disabled, it outputs a
-    # message indicating that SimpleCov startup is skipped. When enabled, it
-    # requires the simplecov gem, configures coverage to include branch
-    # coverage, adds a filter based on the caller's directory, and sets up
-    # multiple formatters including SimpleFormatter, HTMLFormatter, and a
-    # custom ContextFormatter.
-    def start
+    # This method sets up SimpleCov with optional profile and block
+    # configuration, but only if the START_SIMPLECOV environment variable is
+    # set to 1. It handles the case where SimpleCov is not available by
+    # displaying a warning and installation instructions.
+    #
+    # @param profile [ String, nil ] the SimpleCov profile to use for
+    # configuration
+    # @param block [ Proc, nil ] optional block containing custom configuration
+    def start(profile = nil, &block)
       if ENV['START_SIMPLECOV'].to_i != 1
         STDERR.puts color(226) {
           "Skip starting Simplecov for code coverage, "\
@@ -169,16 +193,8 @@ module GemHadar::SimpleCov
       end
       require 'simplecov'
       STDERR.puts color(76) { "Configuring Simplecov for code coverage." }
-      filter = "#{File.basename(File.dirname(caller.first))}/"
-      SimpleCov.start do
-        enable_coverage :branch
-        add_filter filter
-        formatter SimpleCov::Formatter::MultiFormatter.new([
-          SimpleCov::Formatter::SimpleFormatter,
-          SimpleCov::Formatter::HTMLFormatter,
-          GemHadar::SimpleCov::ContextFormatter,
-        ])
-      end
+      block ||= default_block
+      SimpleCov.start(profile, &block)
     rescue LoadError => e
       warn "Caught #{e.class}: #{e}"
       STDERR.puts "Install with: gem install simplecov"

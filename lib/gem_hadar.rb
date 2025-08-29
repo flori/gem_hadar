@@ -1713,7 +1713,7 @@ class GemHadar
       base_url = 'http://%s' % host
     end
     base_url.present? or return
-    ollama = Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
+    Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
   end
 
   # Generates a response from an AI model using the Ollama::Client.

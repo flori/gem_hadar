@@ -19,7 +19,7 @@ GemHadar do
 
   dependency 'tins',           '~> 1.0'
   dependency 'term-ansicolor', '~> 1.0'
-  dependency 'ollama-ruby',    '~> 1.0'
+  dependency 'ollama-ruby',    '~> 1.7'
   dependency 'mize'
   dependency 'rake'
   dependency 'yard'

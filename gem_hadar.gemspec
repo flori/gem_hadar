@@ -23,11 +23,11 @@ Gem::Specification.new do |s|
 
   s.specification_version = 4
 
-  s.add_development_dependency(%q<gem_hadar>.freeze, ["~> 2.1".freeze])
+  s.add_development_dependency(%q<gem_hadar>.freeze, ["~> 2.2".freeze])
   s.add_development_dependency(%q<rspec>.freeze, ["~> 3.13".freeze])
   s.add_runtime_dependency(%q<tins>.freeze, ["~> 1.0".freeze])
   s.add_runtime_dependency(%q<term-ansicolor>.freeze, ["~> 1.0".freeze])
-  s.add_runtime_dependency(%q<ollama-ruby>.freeze, ["~> 1.0".freeze])
+  s.add_runtime_dependency(%q<ollama-ruby>.freeze, ["~> 1.7".freeze])
   s.add_runtime_dependency(%q<mize>.freeze, [">= 0".freeze])
   s.add_runtime_dependency(%q<rake>.freeze, [">= 0".freeze])
   s.add_runtime_dependency(%q<yard>.freeze, [">= 0".freeze])

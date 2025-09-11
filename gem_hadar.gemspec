@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-# stub: gem_hadar 2.3.0 ruby lib
+# stub: gem_hadar 2.4.0 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "gem_hadar".freeze
-  s.version = "2.3.0".freeze
+  s.version = "2.4.0".freeze
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
@@ -23,9 +23,9 @@ Gem::Specification.new do |s|
 
   s.specification_version = 4
 
-  s.add_development_dependency(%q<gem_hadar>.freeze, ["~> 2.2".freeze])
+  s.add_development_dependency(%q<gem_hadar>.freeze, ["~> 2.3".freeze])
   s.add_development_dependency(%q<rspec>.freeze, ["~> 3.13".freeze])
-  s.add_runtime_dependency(%q<tins>.freeze, ["~> 1.0".freeze])
+  s.add_runtime_dependency(%q<tins>.freeze, ["~> 1".freeze])
   s.add_runtime_dependency(%q<term-ansicolor>.freeze, ["~> 1.0".freeze])
   s.add_runtime_dependency(%q<ollama-ruby>.freeze, ["~> 1.7".freeze])
   s.add_runtime_dependency(%q<mize>.freeze, [">= 0".freeze])

@@ -17,7 +17,7 @@ GemHadar do
 
   executables << 'gem_hadar'
 
-  dependency 'tins',           '~> 1.0'
+  dependency 'tins',           '~> 1'
   dependency 'term-ansicolor', '~> 1.0'
   dependency 'ollama-ruby',    '~> 1.7'
   dependency 'mize'

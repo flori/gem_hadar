@@ -1481,7 +1481,7 @@ class GemHadar
 
   def yard_doc_task
     YARD::Rake::YardocTask.new(:yard_doc) do |t|
-      t.files = doc_code_files.select { _1 =~ /\.rb\z/ }
+      t.files = doc_code_files.grep(%r(\.rb\z))
 
       output_dir = yard_dir
       t.options = [ "--output-dir=#{output_dir}" ]

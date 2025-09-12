@@ -11,7 +11,8 @@ GemHadar do
   summary        'Library for the development of Ruby Gems'
   description    'This library contains some useful functionality to support the development of Ruby Gems'
   test_dir       'spec'
-  ignore         '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble', '.bundle', '.yardoc', 'tags'
+  ignore         '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble',
+                 '.bundle', '.yardoc', 'doc', 'tags'
   package_ignore '.gitignore', 'VERSION'
   readme         'README.md'
 

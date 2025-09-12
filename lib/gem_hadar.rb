@@ -398,6 +398,21 @@ class GemHadar
     end
   end
 
+  # The doc_code_files method manages the list of code files to be included in
+  # documentation generation.
+  #
+  # This method sets up a DSL accessor for the doc_code_files attribute, which
+  # specifies the Ruby source files that should be processed when generating
+  # YARD documentation. It defaults to using the files attribute and provides a
+  # way to customize which code files are included in the documentation build
+  # process.
+  #
+  # @return [ FileList ] a list of file paths to be included in YARD documentation generation
+  # @see GemHadar#files
+  dsl_accessor :doc_code_files do
+    files
+  end
+
   # The doc_files attribute accessor for configuring additional documentation
   # files.
   #
@@ -463,7 +478,7 @@ class GemHadar
   #
   # @return [ Array<String> ] an array of file paths to be included in the gem package
   dsl_accessor :files do
-    `git ls-files`.split("\n")
+    FileList[`git ls-files`.split("\n")]
   end
 
   # The package_ignore_files attribute accessor for configuring files to be
@@ -1466,7 +1481,7 @@ class GemHadar
 
   def yard_doc_task
     YARD::Rake::YardocTask.new(:yard_doc) do |t|
-      t.files = files.select { _1 =~ /\.rb\z/ }
+      t.files = doc_code_files.select { _1 =~ /\.rb\z/ }
 
       output_dir = yard_dir
       t.options = [ "--output-dir=#{output_dir}" ]

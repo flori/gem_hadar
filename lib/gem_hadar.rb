@@ -779,7 +779,13 @@ class GemHadar
     if args.empty?
       package_ignore_files
     else
-      args.each { |a| package_ignore_files << a }
+      args.each do |arg|
+        if File.directory?(arg)
+          package_ignore_files.merge FileList['%s/**/*' % arg]
+        else
+          package_ignore_files << arg
+        end
+      end
     end
   end
 

@@ -140,11 +140,14 @@ class GemHadar
     [ name, version ] * '-'
   end
 
-  # The module_type attribute accessor for configuring the type of Ruby construct to generate for version code.
+  # The module_type attribute accessor for configuring the type of Ruby
+  # construct to generate for version code.
   #
-  # This method sets up a DSL accessor for the module_type attribute, which determines whether the generated code
-  # structure for the version module should be a :module or :class. This controls the type of Ruby construct
-  # created when generating code skeletons and version files. The value can be set to either:
+  # This method sets up a DSL accessor for the module_type attribute, which
+  # determines whether the generated code structure for the version module
+  # should be a :module or :class. This controls the type of Ruby construct
+  # created when generating code skeletons and version files. The value can be
+  # set to either:
   #
   # - :module (default) - Generates module-based structure
   # - :class - Generates class-based structure
@@ -342,10 +345,10 @@ class GemHadar
 
   # The test_dir attribute accessor for configuring the test directory.
   #
-  # This method sets up a DSL accessor for the test_dir attribute, which specifies
-  # the directory where test files are located. It provides a way to define the
-  # location of the test directory that will be used by various testing tasks and
-  # configurations within the gem project.
+  # This method sets up a DSL accessor for the test_dir attribute, which
+  # specifies the directory where test files are located. It provides a way to
+  # define the location of the test directory that will be used by various
+  # testing tasks and configurations within the gem project.
   #
   # @return [ String, nil ] the path to the test directory or nil if not set
   dsl_accessor :test_dir
@@ -552,9 +555,9 @@ class GemHadar
   # display after gem installation.
   #
   # This method sets up a DSL accessor for the post_install_message attribute,
-  # which specifies a message to be displayed to users after the gem is installed.
-  # This can be useful for providing additional information, usage instructions,
-  # or important warnings to users of the gem.
+  # which specifies a message to be displayed to users after the gem is
+  # installed. This can be useful for providing additional information, usage
+  # instructions, or important warnings to users of the gem.
   #
   # @return [ String, nil ] the post-installation message or nil if not set
   dsl_accessor :post_install_message
@@ -1244,9 +1247,9 @@ class GemHadar
   #
   # - It creates subtasks in the :master:push namespace for each configured Git
   #   remote, allowing individual pushes to specific remotes.
-  # - It also defines a top-level :master:push task that depends on all the individual
-  #   remote push tasks, enabling a single command to push the master branch to
-  #   all remotes.
+  # - It also defines a top-level :master:push task that depends on all the
+  #   individual remote push tasks, enabling a single command to push the master
+  #   branch to all remotes.
   #
   # The tasks utilize the git_remotes method to determine which remotes are
   # configured and generate appropriate push commands for each one.
@@ -1479,6 +1482,17 @@ class GemHadar
     end
   end
 
+  # The yard_doc_task method configures and sets up a YARD documentation
+  # generation task.
+  #
+  # This method initializes a YARD::Rake::YardocTask that processes Ruby source
+  # files and generates comprehensive documentation including private and
+  # protected methods. It configures the output directory, handles README
+  # files, includes additional documentation files, and sets up a pre-execution
+  # cleanup routine.
+  #
+  # @return [ void ] This method does not return a value but defines a Rake task
+  #                   named :yard_doc with specific configuration options.
   def yard_doc_task
     YARD::Rake::YardocTask.new(:yard_doc) do |t|
       t.files = doc_code_files.grep(%r(\.rb\z))
@@ -1512,8 +1526,8 @@ class GemHadar
   #
   # It creates multiple subtasks under the :yard namespace, including tasks for
   # creating private documentation, viewing the generated documentation,
-  # cleaning up documentation files, and listing undocumented elements.
-  # If YARD is not available, the method returns early without defining any tasks.
+  # cleaning up documentation files, and listing undocumented elements. If YARD
+  # is not available, the method returns early without defining any tasks.
   def yard_task
     defined? YARD or return
     yard_doc_task
@@ -1551,6 +1565,14 @@ class GemHadar
     task :yard => %i[ yard:private yard:view ]
   end
 
+  # The config_task method creates a Rake task that displays the current
+  # GemHadar configuration.
+  #
+  # This method sets up a :gem_hadar:config task under the Rake namespace that
+  # outputs detailed information about the gem's configuration, including
+  # environment variables, API keys, Ollama settings, XDG configuration
+  # directory, general gem properties, build and development parameters, Git
+  # remotes, and AI prompt defaults.
   def config_task
     namespace :gem_hadar do
       desc "Display current gem_hadar configuration"
@@ -1720,7 +1742,8 @@ class GemHadar
   # set. The method then constructs the full base URL and initializes an
   # Ollama::Client with appropriate timeouts for read and connect operations.
   #
-  # @return [Ollama::Client, nil] An initialized Ollama::Client instance if a valid base URL is present, otherwise nil.
+  # @return [Ollama::Client, nil] An initialized Ollama::Client instance if a
+  #   valid base URL is present, otherwise nil.
   def ollama_client
     base_url = ENV['OLLAMA_URL']
     if base_url.blank?

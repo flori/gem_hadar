@@ -28,6 +28,10 @@ using rake tasks. It is a comprehensive Ruby gem automation tool that provides:
 - **Gemfile and .gitignore automation** - Automatic creation and management of
   essential project files with 📦dependency management
 
+## Documentation
+
+Complete API documentation is available at: [GitHub.io](https://flori.github.io/gem_hadar/)
+
 ## Workflow Diagrams
 
 ### Gem Build Process

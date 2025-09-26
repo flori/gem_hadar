@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-# stub: gem_hadar 2.6.0 ruby lib
+# stub: gem_hadar 2.7.0 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "gem_hadar".freeze
-  s.version = "2.6.0".freeze
+  s.version = "2.7.0".freeze
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.email = "flori@ping.de".freeze
   s.executables = ["gem_hadar".freeze]
   s.extra_rdoc_files = ["README.md".freeze, "lib/gem_hadar.rb".freeze, "lib/gem_hadar/github.rb".freeze, "lib/gem_hadar/prompt_template.rb".freeze, "lib/gem_hadar/setup.rb".freeze, "lib/gem_hadar/simplecov.rb".freeze, "lib/gem_hadar/template_compiler.rb".freeze, "lib/gem_hadar/utils.rb".freeze, "lib/gem_hadar/version.rb".freeze, "lib/gem_hadar/warn.rb".freeze]
-  s.files = ["Gemfile".freeze, "LICENSE".freeze, "README.md".freeze, "Rakefile".freeze, "bin/gem_hadar".freeze, "gem_hadar.gemspec".freeze, "lib/gem_hadar.rb".freeze, "lib/gem_hadar/github.rb".freeze, "lib/gem_hadar/prompt_template.rb".freeze, "lib/gem_hadar/setup.rb".freeze, "lib/gem_hadar/simplecov.rb".freeze, "lib/gem_hadar/template_compiler.rb".freeze, "lib/gem_hadar/utils.rb".freeze, "lib/gem_hadar/version.rb".freeze, "lib/gem_hadar/warn.rb".freeze, "spec/gem_hadar_spec.rb".freeze, "spec/spec_helper.rb".freeze]
+  s.files = [".github/workflows/static.yml".freeze, "Gemfile".freeze, "LICENSE".freeze, "README.md".freeze, "Rakefile".freeze, "bin/gem_hadar".freeze, "gem_hadar.gemspec".freeze, "lib/gem_hadar.rb".freeze, "lib/gem_hadar/github.rb".freeze, "lib/gem_hadar/github_workflows/static.yml.erb".freeze, "lib/gem_hadar/prompt_template.rb".freeze, "lib/gem_hadar/setup.rb".freeze, "lib/gem_hadar/simplecov.rb".freeze, "lib/gem_hadar/template_compiler.rb".freeze, "lib/gem_hadar/utils.rb".freeze, "lib/gem_hadar/version.rb".freeze, "lib/gem_hadar/warn.rb".freeze, "spec/gem_hadar_spec.rb".freeze, "spec/spec_helper.rb".freeze]
   s.homepage = "https://github.com/flori/gem_hadar".freeze
   s.licenses = ["MIT".freeze]
   s.rdoc_options = ["--title".freeze, "GemHadar - Library for the development of Ruby Gems".freeze, "--main".freeze, "README.md".freeze]
@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
 
   s.specification_version = 4
 
-  s.add_development_dependency(%q<gem_hadar>.freeze, ["~> 2.5".freeze])
+  s.add_development_dependency(%q<gem_hadar>.freeze, ["~> 2.7".freeze])
   s.add_development_dependency(%q<rspec>.freeze, ["~> 3.13".freeze])
   s.add_runtime_dependency(%q<tins>.freeze, ["~> 1".freeze])
   s.add_runtime_dependency(%q<term-ansicolor>.freeze, ["~> 1.0".freeze])

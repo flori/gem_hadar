@@ -18,6 +18,10 @@ GemHadar do
 
   executables << 'gem_hadar'
 
+  github_workflows(
+    'static.yml' => { branches: '[ "master" ]' }
+  )
+
   dependency 'tins',           '~> 1'
   dependency 'term-ansicolor', '~> 1.0'
   dependency 'ollama-ruby',    '~> 1.7'

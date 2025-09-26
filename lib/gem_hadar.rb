@@ -1223,10 +1223,10 @@ class GemHadar
   # namespace:
   #
   # - It creates subtasks in the :version:push namespace for each configured
-  # Git remote, allowing individual pushes to specific remotes.
+  #   Git remote, allowing individual pushes to specific remotes.
   # - It also defines a top-level :version:push task that depends on all the
-  # individual remote push tasks, enabling a single command to push the version
-  # tag to all remotes.
+  #   individual remote push tasks, enabling a single command to push the
+  #   version tag to all remotes.
   #
   # The tasks utilize the git_remotes method to determine which remotes are
   # configured and generate appropriate push commands for each one.
@@ -1249,7 +1249,8 @@ class GemHadar
   # The master_push_task method defines Rake tasks for pushing the master
   # branch to configured Git remotes.
   #
-  # This method sets up a hierarchical task structure under the :master namespace:
+  # This method sets up a hierarchical task structure under the :master
+  # namespace:
   #
   # - It creates subtasks in the :master:push namespace for each configured Git
   #   remote, allowing individual pushes to specific remotes.
@@ -1468,7 +1469,8 @@ class GemHadar
   # The rvm_task method creates a .rvmrc file that configures RVM to use the
   # specified Ruby version and gemset for the project.
   #
-  # This task generates a .rvmrc file in the project root directory with commands to:
+  # This task generates a .rvmrc file in the project root directory with
+  # commands to:
   # - Use the Ruby version specified by the rvm.use accessor
   # - Create the gemset specified by the rvm.gemset accessor
   # - Switch to using that gemset
@@ -1672,6 +1674,7 @@ class GemHadar
     version_tag_task
     push_task
     release_task
+    github_workflows_task
     write_ignore_file
     write_gemfile
     if extensions.full?
@@ -2020,6 +2023,71 @@ class GemHadar
       remotes_uris.find { |uri| uri.hostname == 'github.com' }
     end
   end
+
+  # The github_workflows attribute accessor for configuring GitHub Actions
+  # workflows.
+  #
+  # This method sets up a DSL accessor for the github_workflows attribute,
+  # which specifies the configuration for generating GitHub Actions workflow
+  # files from ERB templates. It provides a way to define which workflows to
+  # generate and the variables to use when rendering the templates.
+  #
+  # @return [ Hash ] a hash mapping workflow names to their configuration
+  #   variables
+  dsl_accessor :github_workflows do
+    {}
+  end
+
+  # The github_workflows_variables method retrieves the cached variables used
+  # for GitHub Actions workflow template compilation.
+  #
+  # This method returns the stored hash of variables that were previously set
+  # during the configuration of GitHub workflows. If no variables have been
+  # set, it returns an empty hash as a default value.
+  #
+  # @return [ Hash ] the hash of variables used for GitHub workflow template
+  #   rendering or an empty hash if none are set
+  def github_workflows_variables
+    @github_workflows_variables || {}
+  end
+
+  # The github_workflows_task method sets up Rake tasks for generating GitHub
+  # Actions workflow files from ERB templates.
+  #
+  # This method configures a hierarchical task structure under the :github namespace that:
+  # - Compiles configured workflow templates from ERB files into actual workflow YAML files
+  # - Creates a :workflows task that depends on all compiled template files
+  # - Sets up a :workflows:clean task to remove generated workflow files
+  # - Uses the github_workflows configuration to determine which workflows to generate
+  # - Applies template variables to customize the generated workflows
+  def github_workflows_task
+    namespace :github do
+      templates = []
+      src_dir = Pathname.new(__dir__).join('gem_hadar', 'github_workflows')
+      dst_dir = Pathname.pwd.join('.github', 'workflows')
+      github_workflows.each do |workflow, variables|
+        @github_workflows_variables = variables
+        src = src_dir.join(workflow + '.erb')
+        puts "Compiling #{src.to_s.inspect} to #{dst_dir.to_s.inspect} now."
+        unless src.exist?
+          warn "Workflow template #{src.to_s.inspect} doesn't exist! => Skipping."
+        end
+        mkdir_p dst_dir
+        dst = dst_dir.join(workflow)
+        templates << (template(src, dst) {}).to_s
+      end
+      desc "Create all configured github workflow tasks"
+      task :workflows => templates
+      namespace :workflows do
+        desc "Delete all created github workflows"
+        task :clean do
+          github_workflows.each_key do |workflow|
+            rm_f dst_dir.join(workflow), verbose: true
+          end
+        end
+      end
+    end
+  end
 end
 
 # The GemHadar method serves as the primary entry point for configuring and
@@ -2044,14 +2112,18 @@ end
 # using the provided block configuration. It ensures the source file has an
 # extension and raises an error if not.
 #
-# @param pathname [ String ] the path to the template file to be processed
+# @param src [ String ] the path to the template file to be processed
+# @param dst [ String ] the path to file that will be the product
 #
 # @yield [ block ] the configuration block for the template compiler
 #
 # @return [ Pathname ] the Pathname object representing the destination file path
-def template(pathname, &block)
-  template_src = Pathname.new(pathname)
-  template_dst = template_src.sub_ext('') # ignore ext, we just support erb anyway
+def template(src, dst = nil, &block)
+  template_src = Pathname.new(src)
+  template_dst = dst ? Pathname.new(dst) : template_src
+  if template_dst.extname == '.erb'
+    template_dst = template_dst.sub_ext('erb')
+  end
   template_src == template_dst and raise ArgumentError,
     "pathname #{pathname.inspect} needs to have a file extension"
   file template_dst.to_s => template_src.to_s do

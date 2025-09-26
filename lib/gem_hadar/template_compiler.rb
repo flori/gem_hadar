@@ -41,7 +41,7 @@ class GemHadar::TemplateCompiler
   def compile(src, dst)
     template = File.read(src)
     File.open(dst, 'w') do |output|
-      erb = ERB.new(template, nil, '-')
+      erb = ERB.new(template, trim_mode: ?-)
       erb.filename = src.to_s
       output.write erb.result binding
     end

@@ -1,6 +1,13 @@
 require 'net/http'
 require 'json'
 
+# A module that provides GitHub API integration functionality for GemHadar.
+#
+# This module contains the ReleaseCreator class which handles the creation of
+# GitHub releases through the GitHub Releases API. It manages authentication,
+# request construction, and response processing for release operations.
+#
+# @see GemHadar::GitHub::ReleaseCreator
 module GemHadar::GitHub
 end
 

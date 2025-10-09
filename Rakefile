@@ -22,13 +22,23 @@ GemHadar do
     'static.yml' => { branches: '[ "master" ]' }
   )
 
-  dependency 'tins',           '~> 1'
+  dependency 'tins',           '~> 1.0'
   dependency 'term-ansicolor', '~> 1.0'
   dependency 'ollama-ruby',    '~> 1.7'
   dependency 'mize'
   dependency 'rake'
   dependency 'yard'
+  dependency 'openssl',        '>= 3.3.1'
+  dependency 'net-http'
+  dependency 'json',           '~> 2.0'
+  dependency 'pathname'
+  dependency 'uri'
+  dependency 'set'
+  dependency 'fileutils'
+  dependency 'erb'
+  development_dependency 'all_images'
   development_dependency 'rspec', '~> 3.13'
+  development_dependency 'simplecov'
 
   licenses << 'MIT'
 end

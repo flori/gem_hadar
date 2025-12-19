@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-# stub: gem_hadar 2.9.0 ruby lib
+# stub: gem_hadar 2.10.0 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "gem_hadar".freeze
-  s.version = "2.9.0".freeze
+  s.version = "2.10.0".freeze
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]

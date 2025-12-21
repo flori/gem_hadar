@@ -134,7 +134,7 @@ class GemHadar
 
       changelog = generate_changelog(versions, changelog:)
 
-      changelog << "# Changes\n"
+      changelog.unshift "# Changes\n"
 
       output << changelog.join("")
     end
@@ -167,7 +167,53 @@ class GemHadar
       inject_into_filename(filename, changelog)
     end
 
+    # The changelog_exist? method checks whether a changelog file exists in the
+    # project.
+    #
+    # This method verifies the presence of a changelog file by checking if the
+    # file path determined by changelog_filename exists in the filesystem.
+    #
+    # @return [ TrueClass, FalseClass ] true if the changelog file exists,
+    #   false otherwise
+    def changelog_exist?
+      changelog_filename.exist?
+    end
+
+    # The changelog_version_added? method checks whether a specific version has
+    # already been added to the changelog file.
+    #
+    # This method verifies if a given version is present in the changelog file
+    # by examining each line for a match with the version tag.
+    #
+    # @param version [ String ] the version to check for in the changelog
+    #
+    # @return [ TrueClass, FalseClass ] true if the version is found in the
+    #   changelog, false otherwise
+    #
+    # @raise [ ArgumentError ] if the changelog file does not exist
+    def changelog_version_added?(version)
+      version = GemHadar::VersionSpec[version]
+      changelog_exist? or
+        raise ArgumentError, "Changelog #{changelog_filename.to_s} doesn't exist!"
+      File.new(changelog_filename).any? do |line|
+        line =~ /#{version.tag}/ and return true
+      end
+      false
+    end
+
     private
+
+    # The changelog_filename method returns the Pathname object for the
+    # changelog file path.
+    #
+    # This method accesses the changelog_filename attribute from the associated
+    # GemHadar instance and wraps it in a Pathname object for convenient file
+    # path manipulation.
+    #
+    # @return [ Pathname ] the Pathname object representing the changelog file path
+    def changelog_filename
+      Pathname.new(@gem_hadar.changelog_filename)
+    end
 
     # The ollama_generate method delegates AI generation requests to the
     # associated GemHadar instance.

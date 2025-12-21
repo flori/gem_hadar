@@ -598,6 +598,17 @@ class GemHadar
     @rvm
   end
 
+  # The changelog_filename attribute accessor for configuring the gem's
+  # changelog file name.
+  #
+  # This method sets up a DSL accessor for the changelog_filename attribute,
+  # which specifies the name of the changelog file to be used in the project.
+  # It provides a way to define a custom changelog filename that will be used
+  # during documentation generation and version management tasks.
+  #
+  # @return [ String, nil ] the name of the changelog file or nil if disabled.
+  dsl_accessor :changelog_filename
+
   # The default_task_dependencies method manages the list of dependencies for
   # the default Rake task.
   #
@@ -1154,16 +1165,13 @@ class GemHadar
       end
 
       desc "Tag this commit as version #{version}"
-      task :tag do
+      task :tag => :modified do
         version_spec = GemHadar::VersionSpec[version]
         if sha = version_tag_remote
           abort <<~EOT.chomp
             Remote version tag #{version_spec.tag.inspect} already exists and points to #{sha.inspect}!"
             Call version:bump first to create a new version before release.
           EOT
-        end
-        unless `git status --porcelain`.empty?
-          abort "Working directory is not clean. Commit or stash changes before tagging."
         end
         sh "git tag -a -m 'Version #{version_spec.untag}' -f #{version_spec.tag.inspect}"
       end
@@ -1383,6 +1391,23 @@ class GemHadar
     end
   end
 
+  # The modified_task method defines a Rake task that checks for uncommitted
+  # changes in the Git repository
+  #
+  # This method creates a Rake task named :modified that runs a Git status
+  # command to identify any modified files that are not yet committed. If any
+  # changed files are found, it aborts the task execution and displays a
+  # message
+  # listing all the uncommitted files
+  def modified_task
+    task :modified do
+      changed_files = `git status --porcelain`.gsub(/^\s*\S\s+/, '').lines
+      unless changed_files.empty?
+        abort "There are still modified files:\n#{changed_files * ''}"
+      end
+    end
+  end
+
   # The push_task_dependencies method manages the list of dependencies for the push task.
   #
   # This method sets up a DSL accessor for the push_task_dependencies attribute,
@@ -1410,12 +1435,7 @@ class GemHadar
     gem_push_task
     git_remotes_task
     github_release_task
-    task :modified do
-      changed_files = `git status --porcelain`.gsub(/^\s*\S\s+/, '').lines
-      unless changed_files.empty?
-        abort "There are still modified files:\n#{changed_files * ''}"
-      end
-    end
+    modified_task
     desc "Push all changes for version #{version} into the internets."
     task :push => push_task_dependencies
   end
@@ -1429,7 +1449,7 @@ class GemHadar
   # with a single command.
   def release_task
     desc "Release the new version #{version} for the gem #{name}."
-    task :release => :push
+    task :release => [ :'changes:added', :push ]
   end
 
   # The compile_task method sets up a Rake task to compile project extensions.
@@ -1642,6 +1662,7 @@ class GemHadar
   # - :changes:range - Show changes for a specific Git range
   # - :changes:full - Generate complete changelog from first tag
   # - :changes:add - Append to existing changelog file
+  # - :changes:added - Check if the current version was added to changelog file
   def changes_task
     namespace :changes do
       desc 'Show changes since last version tag'
@@ -1706,8 +1727,17 @@ class GemHadar
 
       desc 'Append new entries to existing changelog file'
       task :add do
-        filename = ARGV[1] or raise 'Need file to add to'
+        filename = ARGV[1] || changelog_filename
+        filename or raise 'Need file to add to'
         GemHadar::ChangelogGenerator.new(self).add_to_file(filename)
+      end
+
+      desc 'Check if current version was added to the changelog'
+      task :added do
+        changelog_filename or next
+        GemHadar::ChangelogGenerator.new(self).changelog_version_added?(version) and next
+        abort "Version #{GemHadar::VersionSpec[version].untag} has not been "\
+          "documented in changelog #{changelog_filename.inspect} file."
       end
     end
 
@@ -1721,6 +1751,7 @@ class GemHadar
             rake changes:range <range> Show changes for a specific Git range (e.g., v1.0.0..v1.2.0)
             rake changes:full [file]   Generate complete changelog from first tag
             rake changes:add <file>    Append new entries to existing changelog file
+            rake changes:added         Check if current version was added to changelog
 
           Examples:
             rake changes:pending
@@ -1729,6 +1760,7 @@ class GemHadar
             rake changes:full
             rake changes:full CHANGES.md
             rake changes:add CHANGES.md
+            rake changes:added
       EOT
     end
   end

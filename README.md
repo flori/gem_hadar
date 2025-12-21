@@ -358,6 +358,17 @@ rvm do
 end
 ```
 
+#### GitHub Workflows Configuration
+
+```ruby
+github_workflows do
+  'ci.yml' => {
+    name: 'Continuous Integration',
+    ruby_versions: ['3.0', '3.1', '3.2']
+  }
+end
+```
+
 #### Task Dependencies
 
 - **`default_task_dependencies`** - Default: `[:gemspec, :test]`
@@ -417,7 +428,7 @@ based on your specific requirements. They are automatically derived from other
 DSL accessors and provide powerful convenience features that enable `GemHadar`
 to generate consistent, well-structured Ruby code automatically.
 
-### Available Tasks
+## Available Tasks
 
 You can list all available tasks with:
 
@@ -425,12 +436,12 @@ You can list all available tasks with:
 $ rake -T
 ```
 
-#### Core Tasks
+### Core Tasks
 
 - `rake build` - Build task (builds all packages for a release)
 - `rake release` - Release the new version 1.2.3 for the gem foo
 
-#### Build Tasks
+### Build Tasks
 
 - `rake gemspec` - Create a gemspec file
 - `rake package` - Build all the packages
@@ -439,7 +450,7 @@ $ rake -T
 - `rake clobber_package` - Remove package products
 - `rake repackage` - Force a rebuild of the package files
 
-#### Version Management
+### Version Management
 
 - `rake version` - Writing version information for foo
 - `rake version:show` - Displaying the current version
@@ -453,7 +464,16 @@ $ rake -T
 - `rake version:push` - Push version 1.2.3 to all git remotes: origin
 - `rake version:origin:push` - Push version 1.2.3 to git remote origin
 
-#### Documentation
+### Changelog Generation
+
+- `rake changes:pending` - Show changes since last version tag
+- `rake changes:current` - Show changes between two latest version tags
+- `rake changes:range` - Show changes for a specific Git range (e.g., v1.0.0..v1.2.0)
+- `rake changes:full` - Generate complete changelog from first tag
+- `rake changes:add` - Append to existing changelog file
+- `rake changes:added` - Check if current version was added to changelog
+
+### Documentation
 
 - `rake doc` - Create yard documentation (including private)
 - `rake yard_doc` - Generate YARD Documentation
@@ -464,7 +484,7 @@ $ rake -T
 - `rake yard:view` - View the yard documentation
 - `rake yard:list-undoc` - List all undocumented classes/modules/methods
 
-#### Testing & Development
+### Testing & Development
 
 - `rake run_specs` - Run RSpec code examples
 - `rake clean` - Remove any temporary products
@@ -474,12 +494,12 @@ $ rake -T
 - `rake default` - Default task
 - `rake compile` - Compile project extensions (if configured)
 
-#### Publishing Tasks
+### Publishing Tasks
 - `rake push` - Push all changes for version 1.2.3 into the internets
 - `rake github:release` - Create a new GitHub release for the current version
   with AI-generated changelog
 
-### Code Coverage with SimpleCov
+## Code Coverage with SimpleCov
 
 To enable detailed code coverage reporting in your project using `GemHadar`,
 follow these steps:
@@ -523,7 +543,7 @@ follow these steps:
 > branch coverage statistics per file, making it ideal for integration with CI
 > tools or custom dashboards.
 
-### Update Gem Version
+## Update Gem Version
 
 Use one of the following rake tasks to bump the version:
 
@@ -534,7 +554,7 @@ Use one of the following rake tasks to bump the version:
 
 Or bump your [VERSION](./VERSION) file by hand.
 
-### Release
+## Release
 
 ```bash
 $ rake build
@@ -554,6 +574,75 @@ $ rake release
 The `rake release` command performs the final publishing steps: pushing the
 master branch and version tag to all git remotes, pushing the gem package to
 RubyGems.org, and creating a GitHub release with AI-generated changelog.
+
+## Template System
+
+GemHadar includes a template compilation system for generating project files:
+
+```ruby
+# In your Rakefile
+template 'templates/Dockerfile.erb', 'Dockerfile' do |t|
+  t.version = version
+  t.name = name
+end
+```
+
+This system uses ERB templates and provides a clean way to generate files
+during your build process.
+
+## GitHub Workflows
+
+Configure automated workflows with ERB templates:
+
+```ruby
+GemHadar do
+  github_workflows do
+    'ci.yml' => {
+      name: 'Continuous Integration',
+      ruby_versions: ['3.0', '3.1', '3.2']
+    }
+  end
+end
+```
+
+This creates workflow files in `.github/workflows/` using templates from the
+gem's internal templates directory.
+
+## Advanced Usage Patterns
+
+### Custom Prompt Templates
+
+Override AI behavior by creating custom prompt files in your XDG config:
+
+```bash
+# Create custom prompt files
+mkdir -p ~/.config/gem_hadar
+cp /path/to/gem_hadar/lib/gem_hadar/default_changelog_prompt.txt ~/.config/gem_hadar/changelog_prompt.txt
+```
+
+### CI/CD Integration
+
+Use the following workflow for automated releases:
+
+```bash
+# Build and test
+$ rake build
+$ rake test
+
+# Bump version and create release
+$ rake version:bump
+$ rake build
+$ rake release
+```
+
+### Troubleshooting
+
+If you encounter issues with AI prompts:
+
+1. Check that Ollama is running
+2. Verify your model is pulled: `ollama list`
+3. Check configuration with: `rake gem_hadar:config`
+4. Review error messages in the console output
 
 ## Author
 

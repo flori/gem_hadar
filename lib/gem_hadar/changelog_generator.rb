@@ -47,18 +47,18 @@ class GemHadar
     # @return [ String ] a minimal changelog entry with just date and version
     #   when no changes are found
     def generate(from, to = 'HEAD')
-      from_spec = GemHadar::VersionSpec[from]
-      to_spec   = GemHadar::VersionSpec[to]
+      from = GemHadar::VersionSpec[from]
+      to   = GemHadar::VersionSpec[to]
 
-      range = "#{from_spec.tag}..#{to_spec.tag}"
+      range = "#{from.tag}..#{to.tag}"
 
       log = `git log #{range}`
       $?.success? or raise "Failed to get git log for range #{range}"
 
-      date = `git log -n1 --pretty='format:%cd' --date=short #{to_spec.tag.inspect}`.chomp
+      date = `git log -n1 --pretty='format:%cd' --date=short #{to.tag.inspect}`.chomp
 
       if log.strip.empty?
-        return "\n## #{date} #{to_spec.without_prefix.to_s}\n"
+        return "\n## #{date} #{to.without_prefix.to_s}\n"
       end
 
       system          = xdg_config('gem_hadar', 'changelog_system_prompt.txt', default_changelog_system_prompt)
@@ -69,7 +69,7 @@ class GemHadar
 
       changes = response.gsub(/\t/, '  ')
 
-      return "\n## #{date} #{to_spec.tag}\n\n#{changes}\n"
+      return "\n## #{date} #{to.tag}\n\n#{changes}\n"
     end
 
     # The generate_range method creates a changelog for a specific version
@@ -87,8 +87,8 @@ class GemHadar
     # @param to [ String ] the ending version or commit reference for the
     #   range, defaults to 'HEAD'
     def generate_range(output, from, to)
-      from_spec = GemHadar::VersionSpec[from]
-      to_spec   = GemHadar::VersionSpec[to]
+      from = GemHadar::VersionSpec[from]
+      to   = GemHadar::VersionSpec[to]
 
       versions = read_versions
 
@@ -97,7 +97,7 @@ class GemHadar
       end
 
       versions = versions.select do |v|
-        v.version >= from_spec.version && v.version <= to_spec.version
+        v >= from && v <= to
       end
 
       changelog = generate_changelog(versions)
@@ -151,11 +151,11 @@ class GemHadar
     # @param filename [ String ] the path to the changelog file to which
     #   entries will be added
     def add_to_file(filename)
-      highest_version = find_highest_version_spec(filename)
+      highest_version = find_highest_version(filename)
 
       if highest_version
         versions = read_versions
-        versions = versions.drop_while { |t| t.version < highest_version.version }
+        versions = versions.drop_while { |t| t < highest_version }
       else
         raise ArgumentError, "Could not find highest version in #{filename.inspect}"
       end
@@ -264,7 +264,7 @@ class GemHadar
       end
     end
 
-    # The find_highest_version_spec method extracts version specifications from
+    # The find_highest_version method extracts version specifications from
     # a changelog file and returns the highest version found
     #
     # This method reads through the specified file line by line, scanning for
@@ -277,7 +277,7 @@ class GemHadar
     #
     # @return [ GemHadar::VersionSpec, nil ] the highest version specification
     #   found in the file, or nil if no versions are found
-    def find_highest_version_spec(filename)
+    def find_highest_version(filename)
       File.open(filename, ?r) do |input|
         specs = []
         input.each do |line|

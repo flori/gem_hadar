@@ -838,7 +838,9 @@ class GemHadar
   #
   # @return [ String ] the git log output in patch format showing changes between the two versions
   def version_log_diff(to_version: 'HEAD', from_version: nil)
-    if to_version == 'HEAD'
+    to_version   = GemHadar::VersionSpec[to_version]
+    from_version = from_version.full? { GemHadar::VersionSpec[from_version] }
+    if to_version.head?
       if from_version.blank?
         from_version = versions.last
       else
@@ -846,7 +848,7 @@ class GemHadar
           fail "Could not find #{from_version.inspect}."
         end
       end
-      `git log -p #{version_tag(from_version)}..HEAD`
+      `git log -p #{from_version.tag}..HEAD`
     else
       unless versions.find { |v| v == to_version }
         fail "Could not find #{to_version.inspect}."
@@ -858,14 +860,14 @@ class GemHadar
           end
         end
         unless from_version
-          return `git log -p #{version_tag(to_version)}`
+          return `git log -p #{to_version.tag}`
         end
       else
         unless versions.find { |v| v == from_version }
           fail "Could not find #{from_version.inspect}."
         end
       end
-      `git log -p #{version_tag(from_version)}..#{version_tag(to_version)}`
+      `git log -p #{from_version.tag}..#{to_version.tag}`
     end
   end
 
@@ -1112,7 +1114,7 @@ class GemHadar
       task :tag do
         force = ENV['FORCE'].to_i == 1
         begin
-          sh "git tag -a -m 'Version #{version}' #{'-f' if force} #{version_tag(version)}"
+          sh "git tag -a -m 'Version #{version}' #{'-f' if force} #{GemHadar::VersionSpec[version].tag}"
         rescue RuntimeError
           if `git diff v#{version}..HEAD`.empty?
             puts "Version #{version} is already tagged, but it's no different"
@@ -1324,7 +1326,7 @@ class GemHadar
         end
         if %r(\A/*(?<owner>[^/]+)/(?<repo>[^/.]+)) =~ github_remote_url&.path
           rc = GitHub::ReleaseCreator.new(owner:, repo:, token: github_api_token)
-          tag_name         = version_tag(version)
+          tag_name         = GemHadar::VersionSpec[version].tag
           target_commitish = `git show -s --format=%H #{tag_name.inspect}^{commit}`.chomp
           body             = edit_temp_file(create_git_release_body)
           if body.present?
@@ -1799,9 +1801,9 @@ class GemHadar
   #   - The start version (e.g., '1.2.3') from which changes are compared.
   #   - The end version (e.g., '1.2.4' or 'HEAD') up to which changes are compared.
   def determine_version_range
-    version_tags      = versions.map { version_tag(_1) } + %w[ HEAD ]
-    found_version_tag = version_tags.index(version_tag(version))
-    found_version_tag.nil? and fail "cannot find version tag #{version_tag(version)}"
+    version_tags      = versions.map { GemHadar::VersionSpec[_1].tag } + %w[ HEAD ]
+    found_version_tag = version_tags.index(GemHadar::VersionSpec[version].tag)
+    found_version_tag.nil? and fail "cannot find version tag #{GemHadar::VersionSpec[version].tag}"
     start_version, end_version = version_tags[found_version_tag, 2]
     return start_version, end_version
   end
@@ -1886,7 +1888,7 @@ class GemHadar
   def gemspec
     Gem::Specification.new do |s|
       s.name        = name
-      s.version     = ::Gem::Version.new(version_untag(version))
+      s.version     = ::Gem::Version.new(GemHadar::VersionSpec[version].untag)
       s.author      = author
       s.email       = email
       s.homepage    = assert_valid_link(:homepage, homepage)
@@ -1973,24 +1975,6 @@ class GemHadar
     `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).map(&:chomp).map { |tag|
       GemHadar::VersionSpec[tag, without_prefix: true]
     }.sort_by(&:version)
-  end
-
-  # The version_tag method prepends a 'v' prefix to the given version
-  # string, unless it's HEAD.
-  #
-  # @param version [String] the version string to modify
-  # @return [String] the modified version string with a 'v' prefix
-  def version_tag(version)
-    GemHadar::VersionSpec[version].tag
-  end
-
-  # The version_untag method removes the 'v' prefix from a version tag string.
-  #
-  # @param version_tag [ String ] the version tag string that may start with 'v'
-  #
-  # @return [ String ] the version string with the 'v' prefix removed
-  def version_untag(version_tag)
-    GemHadar::VersionSpec[version].untag
   end
 
   # The github_remote_url method retrieves and parses the GitHub remote URL

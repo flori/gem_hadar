@@ -7,15 +7,15 @@
 # representation.
 #
 # @example Creating a version specification
-#   version_spec = GemHadar::VersionSpec['1.2.3']
+#   version = GemHadar::VersionSpec['1.2.3']
 #
 # @example Checking if a version is a HEAD reference
-#   version_spec = GemHadar::VersionSpec['HEAD']
-#   version_spec.head? # => true
+#   version = GemHadar::VersionSpec['HEAD']
+#   version.head? # => true
 #
 # @example Getting the version tag with appropriate prefixing
-#   version_spec = GemHadar::VersionSpec['1.2.3']
-#   version_spec.tag # => 'v1.2.3'
+#   version = GemHadar::VersionSpec['1.2.3']
+#   version.tag # => 'v1.2.3'
 #
 # @example Comparing versions
 #   version1 = GemHadar::VersionSpec['1.2.3']
@@ -140,5 +140,56 @@ class GemHadar::VersionSpec
   # @return [String] the version string with 'v' prefix
   def with_prefix
     to_s.sub(/\A(?!v)/, 'v')
+  end
+
+  # The <=> method compares this version specification with another object.
+  #
+  # This method implements the comparison operator for VersionSpec objects,
+  # allowing them to be sorted and compared using standard Ruby comparison
+  # operators.
+  #
+  # @param other [ Object ] the object to compare against
+  #
+  # @return [ Integer ] -1 if this version is less than the other, 0 if they
+  #   are equal, 1 if this version is greater than the other
+  #
+  # @raise [ TypeError ] if the other object is not a VersionSpec instance
+  # @raise [ TypeError ] if the other object has no valid version to compare against
+  def <=>(other)
+    other.is_a?(self.class) or raise TypeError, "other needs to be a #{self.class}"
+    other.version or raise TypeError, "cannot compare to #{other.inspect}"
+    version <=> other.version
+  end
+  include Comparable
+
+  # The eql? method checks for equality between this version specification and
+  # another object.
+  #
+  # This method determines if the current VersionSpec instance is equal to another
+  # object by first checking if the other object is of the same class. If so, it
+  # compares either both objects represent HEAD references or their underlying
+  # version objects for equality.
+  #
+  # @param other [ Object ] the object to compare against
+  #
+  # @return [ TrueClass, FalseClass ] true if the objects are equal, false otherwise
+  def eql?(other)
+    other.is_a?(self.class) && (head? && other.head? || version == other.version)
+  end
+
+  # The hash method computes a hash value for the version specification.
+  #
+  # This method returns a hash code that represents the version specification.
+  # If the version specification has a valid version object, it returns the
+  # hash of that version object. Otherwise, it returns the hash of the string
+  # representation of the version specification.
+  #
+  # @return [ Integer ] the hash value of the version specification
+  def hash
+    if version?
+      version.hash
+    else
+      to_s.hash
+    end
   end
 end

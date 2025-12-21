@@ -1635,7 +1635,6 @@ class GemHadar
         puts "Git Remote(s): #{ENV['GIT_REMOTE'] || 'origin'}"
 
         # Other
-        puts "Force Operations: #{ENV['FORCE'] || '0'}"
         puts "Version Override: #{ENV['VERSION'] || 'Not set'}"
         puts "GitHub Release Enabled: #{ENV['GITHUB_RELEASE_ENABLED'] || 'Not set'}"
 

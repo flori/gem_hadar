@@ -107,7 +107,6 @@ The following environment variables can be used to configure `gem_hadar`:
 | `XDG_CONFIG_HOME` | XDG configuration directory override | System default |
 | `MAKE` | Make program to use for building extensions | `gmake` or `make` |
 | `VERSION` | Override the version string for some tasks | Not set |
-| `FORCE` | Force certain operations (1 to enable) | 0 |
 | `GIT_REMOTE` | Git remote name(s) for operations, space separated | `origin` |
 | `GITHUB_RELEASE_ENABLED` | Enable GitHub releases (yes/no) | Auto-detected |
 | `EDITOR` | Editor to use for interactive tasks | `vi` |
@@ -230,7 +229,7 @@ This task displays all current configuration values including:
 - Repository information (gem name, version)
 - Build parameters (MAKE, EDITOR)
 - Git configuration (remote)
-- Other flags (FORCE, VERSION, GITHUB_RELEASE_ENABLED)
+- Other flags (VERSION, GITHUB_RELEASE_ENABLED)
 - XDG/HOME directories
 - AI prompt defaults
 

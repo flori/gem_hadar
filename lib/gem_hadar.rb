@@ -913,8 +913,7 @@ class GemHadar
       task :update do
         answer = ask?("Which gem_hadar version? ", /^((?:\d+.){2}(?:\d+))$/)
         unless answer
-          warn "Invalid version specification!"
-          exit 1
+          abort "Invalid version specification!"
         end
         gem_hadar_version = answer[0]
         filename = "#{name}.gemspec"
@@ -1099,6 +1098,37 @@ class GemHadar
     end
   end
 
+  # The version_tag_local method retrieves the Git revision hash for the current version tag
+  #
+  # This method executes a Git command to obtain the full revision hash (commit SHA) associated
+  # with the current gem version tag. It constructs the tag name using the GemHadar::VersionSpec
+  # class and then uses Git's rev-parse command to resolve the tag to its corresponding commit.
+  #
+  # @return [ String ] the Git revision hash for the current version tag
+  # @return [ String ] an empty string if the Git command fails
+  # @return [ String ] the output of the Git rev-parse command as a string
+  def version_tag_local
+    `git show-ref #{GemHadar::VersionSpec[version].tag.inspect}`.
+      chomp.sub(/\s.*/, '').full?
+  end
+  memoize method: :version_tag_local
+
+  # The version_tag_remote method retrieves the Git revision hash for the remote version tag
+  #
+  # This method executes a Git command to obtain the full revision hash (commit SHA) associated
+  # with the current gem version tag on the remote repository. It constructs the tag name using
+  # the GemHadar::VersionSpec class and then uses Git's ls-remote command to resolve the tag
+  # to its corresponding commit on the specified remote.
+  #
+  # @return [ String ] the Git revision hash for the remote version tag
+  # @return [ String ] an empty string if the Git command fails or no remote tag is found
+  # @return [ String ] the output of the Git ls-remote command as a string
+  def version_tag_remote
+    `git ls-remote --tags #{git_remote} #{GemHadar::VersionSpec[version].tag.inspect}`.
+      chomp.sub(/\s.*/, '').full?
+  end
+  memoize method: :version_tag_remote
+
   # The version_tag_task method defines a Rake task that creates a Git tag for
   # the current version.
   #
@@ -1110,24 +1140,32 @@ class GemHadar
   # overwrite it forcefully.
   def version_tag_task
     namespace :version do
+      namespace :tag do
+        desc "show local tag revision"
+        task :local do
+          system 'git fetch --tags'
+          puts version_tag_local
+        end
+
+        desc "show remote tag revision"
+        task :remote do
+          puts version_tag_remote
+        end
+      end
+
       desc "Tag this commit as version #{version}"
       task :tag do
-        force = ENV['FORCE'].to_i == 1
-        begin
-          sh "git tag -a -m 'Version #{version}' #{'-f' if force} #{GemHadar::VersionSpec[version].tag}"
-        rescue RuntimeError
-          if `git diff v#{version}..HEAD`.empty?
-            puts "Version #{version} is already tagged, but it's no different"
-          else
-            if ask?("Different version tag #{version} already exists. Overwrite with "\
-                "force? (yes/NO) ", /\Ayes\z/i)
-              force = true
-              retry
-            else
-              exit 1
-            end
-          end
+        version_spec = GemHadar::VersionSpec[version]
+        if sha = version_tag_remote
+          abort <<~EOT.chomp
+            Remote version tag #{version_spec.tag.inspect} already exists and points to #{sha.inspect}!"
+            Call version:bump first to create a new version before release.
+          EOT
         end
+        unless `git status --porcelain`.empty?
+          abort "Working directory is not clean. Commit or stash changes before tagging."
+        end
+        sh "git tag -a -m 'Version #{version_spec.untag}' -f #{version_spec.tag.inspect}"
       end
     end
   end
@@ -1258,8 +1296,7 @@ class GemHadar
               exit 1
             end
           else
-            warn "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
-            exit 1
+            abort "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
           end
         end
       end
@@ -1376,8 +1413,7 @@ class GemHadar
     task :modified do
       changed_files = `git status --porcelain`.gsub(/^\s*\S\s+/, '').lines
       unless changed_files.empty?
-        warn "There are still modified files:\n#{changed_files * ''}"
-        exit 1
+        abort "There are still modified files:\n#{changed_files * ''}"
       end
     end
     desc "Push all changes for version #{version} into the internets."

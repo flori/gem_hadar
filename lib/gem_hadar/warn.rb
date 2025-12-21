@@ -43,8 +43,6 @@ class GemHadar
     # within this method itself.
     #
     # @param msgs [ Array<Object> ] the array of message objects to display as failures
-    #
-    # @return [ void ]
     def fail(*msgs)
       msgs.map! do |a|
         a.respond_to?(:to_str) ? color(196) { a.to_str } : a

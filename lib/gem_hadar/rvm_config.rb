@@ -37,7 +37,6 @@ class GemHadar
     # an argument, it sets the Ruby version to be used.
     #
     # @return [ String ] the Ruby version string configured for RVM use
-    # @see GemHadar::RvmConfig
     dsl_accessor :use do `rvm tools strings`.split(/\n/).full?(:last) || 'ruby' end
 
     # The gemset method retrieves or sets the RVM gemset name for the project.
@@ -49,8 +48,6 @@ class GemHadar
     # When called with an argument, it sets the gemset name to be used with RVM.
     #
     # @return [ String ] the RVM gemset name configured for the project
-    # @see GemHadar::RvmConfig#use
-    # @see GemHadar::RvmConfig
     dsl_accessor :gemset do @outer_scope.name end
   end
 end

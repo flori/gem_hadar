@@ -6,8 +6,6 @@ require 'json'
 # This module contains the ReleaseCreator class which handles the creation of
 # GitHub releases through the GitHub Releases API. It manages authentication,
 # request construction, and response processing for release operations.
-#
-# @see GemHadar::GitHub::ReleaseCreator
 module GemHadar::GitHub
 end
 
@@ -74,6 +72,7 @@ class GemHadar::GitHub::ReleaseCreator
   #   details about the created release
   #
   # @raise [ RuntimeError ] if the GitHub API request fails with a non-success status code
+  # @raise [ JSON::ParserError ] if the API response cannot be parsed as JSON
   def perform(tag_name:, target_commitish:, body:, name: tag_name, draft: false, prerelease: false)
     uri = URI("#{self.class.github_api_url}/repos/#@owner/#@repo/releases")
 

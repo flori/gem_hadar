@@ -13,7 +13,6 @@ require 'rake/clean'
 require 'rake/testtask'
 require 'set'
 require 'pathname'
-require 'ollama'
 require 'term/ansicolor'
 require_maybe 'yard'
 require_maybe 'simplecov'
@@ -21,8 +20,6 @@ require_maybe 'rubygems/package_task'
 require_maybe 'rcov/rcovtask'
 require_maybe 'rspec/core/rake_task'
 
-# A brief description of the GemHadar class.
-#
 # The GemHadar class serves as the primary configuration and task management
 # framework for Ruby gem projects. It provides a DSL for defining gem metadata,
 # dependencies, and Rake tasks, while also offering integration with various
@@ -61,8 +58,11 @@ require 'gem_hadar/utils'
 require 'gem_hadar/warn'
 require 'gem_hadar/setup'
 require 'gem_hadar/template_compiler'
+require 'gem_hadar/ollama_support'
 require 'gem_hadar/github'
+require 'gem_hadar/version_spec'
 require 'gem_hadar/prompt_template'
+require 'gem_hadar/changelog_generator'
 require 'gem_hadar/rvm_config'
 
 class GemHadar
@@ -70,6 +70,7 @@ class GemHadar
   include GemHadar::Utils
   include GemHadar::PromptTemplate
   include GemHadar::Warn
+  include GemHadar::OllamaSupport
 
   if defined?(::RbConfig)
     include ::RbConfig
@@ -80,12 +81,16 @@ class GemHadar
   extend DSLKit::DSLAccessor
   include Tins::SecureWrite
 
-  # The initialize method sets up the GemHadar instance by initializing
-  # dependency arrays and evaluating a configuration block.
+  # The initialize method sets up a new GemHadar instance and configures it
+  # using the provided block.
   #
-  # @param block [Proc] optional configuration block to set gem properties and settings
+  # This method creates a new instance of the GemHadar class, initializes
+  # internal arrays for dependencies and development dependencies, and then
+  # evaluates the provided block in the context of the new instance to
+  # configure the gem settings.
   #
-  # @return [GemHadar] the initialized GemHadar instance
+  # @yield [gem_hadar] yields the GemHadar instance to the configuration block
+  # @yieldparam gem_hadar [GemHadar] the GemHadar instance being configured
   def initialize(&block)
     @dependencies = []
     @development_dependencies = []
@@ -1070,8 +1075,8 @@ class GemHadar
       desc 'Bump version with AI suggestion'
       task :bump do
         log_diff = version_log_diff(from_version: nil, to_version: 'HEAD')
-        system   = xdg_config('version_bump_system_prompt.txt', default_version_bump_system_prompt)
-        prompt   = xdg_config('version_bump_prompt.txt', default_version_bump_prompt) % { version:, log_diff: }
+        system   = xdg_config('gem_hadar', 'version_bump_system_prompt.txt', default_version_bump_system_prompt)
+        prompt   = xdg_config('gem_hadar', 'version_bump_prompt.txt', default_version_bump_prompt) % { version:, log_diff: }
         response = ollama_generate(system:, prompt:)
         puts response
         default = nil
@@ -1287,8 +1292,8 @@ class GemHadar
   # @return [ String ] the generated changelog content for the release body
   def create_git_release_body
     log_diff = version_log_diff(to_version: version)
-    system   = xdg_config('release_system_prompt.txt', default_git_release_system_prompt)
-    prompt   = xdg_config('release_prompt.txt', default_git_release_prompt) % { name:, version:, log_diff: }
+    system   = xdg_config('gem_hadar', 'release_system_prompt.txt', default_git_release_system_prompt)
+    prompt   = xdg_config('gem_hadar', 'release_prompt.txt', default_git_release_prompt) % { name:, version:, log_diff: }
     ollama_generate(system:, prompt:)
   end
 
@@ -1442,9 +1447,6 @@ class GemHadar
   # protected methods. It configures the output directory, handles README
   # files, includes additional documentation files, and sets up a pre-execution
   # cleanup routine.
-  #
-  # @return [ void ] This method does not return a value but defines a Rake task
-  #                   named :yard_doc with specific configuration options.
   def yard_doc_task
     YARD::Rake::YardocTask.new(:yard_doc) do |t|
       t.files = doc_code_files.grep(%r(\.rb\z))
@@ -1548,7 +1550,7 @@ class GemHadar
         # Ollama
         puts "Ollama Model: #{ollama_model} (default is #{ollama_model_default})"
 
-        if url = ollama_client&.full?(:base_url)&.to_s
+        if url = (ollama.base_url rescue nil)&.to_s
           puts "Ollama Base URL: #{url.inspect}"
         else
           puts "Ollama Base URL: Not set"
@@ -1560,8 +1562,8 @@ class GemHadar
           puts "Ollama Model Options: Not set (using defaults)"
         end
 
-        # XDG config home
-        puts "XDG config home: #{xdg_config_home.to_s.inspect}"
+        # XDG config app dir
+        puts "XDG config app dir: #{xdg_config_dir('gem_hadar').to_s.inspect}"
 
         # General
         puts "Gem Name: #{name}"
@@ -1583,11 +1585,113 @@ class GemHadar
         arrow = ?⤵
         puts bold{"version_bump_system_prompt.txt"} + "#{arrow}\n" + italic{default_version_bump_system_prompt}
         puts bold{"version_bump_prompt.txt"} + "#{arrow}\n#{default_version_bump_prompt}"
-        puts bold{"release_system_prompt.txt"} + "#{arrow}\n" + italic{default_git_release_system_prompt}
-        puts bold{"release_prompt.txt"} + "#{arrow}\n" + italic{default_git_release_prompt}
+        puts bold{"git_release_system_prompt.txt"} + "#{arrow}\n" + italic{default_git_release_system_prompt}
+        puts bold{"git_release_prompt.txt"} + "#{arrow}\n" + italic{default_git_release_prompt}
+        puts bold{"changelog_system_prompt.txt"} + "#{arrow}\n" + italic{default_changelog_system_prompt}
+        puts bold{"changelog_prompt.txt"} + "#{arrow}\n" + italic{default_changelog_prompt}
 
         puts "=== End Configuration ==="
       end
+    end
+  end
+
+  # The changes_task method defines namespaced Rake tasks for generating changelogs.
+  #
+  # This method sets up a hierarchical task structure under the :changes namespace that:
+  # - :changes - Show help for all changes tasks
+  # - :changes:pending - Show changes since last version tag
+  # - :changes:current - Show changes between two latest version tags
+  # - :changes:range - Show changes for a specific Git range
+  # - :changes:full - Generate complete changelog from first tag
+  # - :changes:add - Append to existing changelog file
+  def changes_task
+    namespace :changes do
+      desc 'Show changes since last version tag'
+      task :pending do
+        unless version_tag_list.any?
+          raise 'Need at least one version tag to work'
+        end
+        last_version = version_tag_list.last
+        if last_version
+          puts GemHadar::ChangelogGenerator.new(self).generate(last_version, 'HEAD')
+        else
+          raise 'Need at least one version tag to work'
+        end
+      end
+
+      desc 'Show changes between two latest version tags'
+      task :current do
+        unless version_tag_list.length >= 2
+          raise 'Need at least two version tags to work'
+        end
+
+        version1, version2 = version_tag_list.last(2)
+        if version1 && version2
+          puts GemHadar::ChangelogGenerator.new(self).generate(version1, version2)
+        else
+          raise 'Need at least two version tags to work'
+        end
+      end
+
+      desc 'Show changes for a specific Git range (e.g., v1.0.0..v1.2.0)'
+      task :range do
+        if ARGV.size == 2 and range = ARGV.pop and range =~ /\A(.+)\.\.(.+)\z/
+          range_from, range_to = $1, $2
+
+          from_spec = GemHadar::VersionSpec[range_from]
+          to_spec   = GemHadar::VersionSpec[range_to]
+
+          unless from_spec.version? && to_spec.version?
+            raise "Invalid version format: #{range_from} or #{range_to}"
+          end
+
+          GemHadar::ChangelogGenerator.new(self).
+            generate_range(STDOUT, from_spec, to_spec)
+          exit
+        else
+          raise "Need range of the form v1.2.3..v1.2.4"
+        end
+      end
+
+      desc 'Generate complete changelog from first tag and output to file'
+      task :full do
+        if ARGV.size == 1
+          GemHadar::ChangelogGenerator.new(self).generate_full(STDOUT)
+        elsif ARGV.size == 2
+          File.open(ARGV[1], ?w) do |file|
+            GemHadar::ChangelogGenerator.new(self).generate_full(file)
+          end
+        else
+          raise "Need a filename to write to"
+        end
+      end
+
+      desc 'Append new entries to existing changelog file'
+      task :add do
+        filename = ARGV[1] or raise 'Need file to add to'
+        GemHadar::ChangelogGenerator.new(self).add_to_file(filename)
+      end
+    end
+
+    # Main changes task that shows help when called directly
+    desc 'Generate changelogs using Git history and AI'
+    task :changes do
+      puts <<~EOT
+          Changes Tasks:
+            rake changes:pending       Show changes since last version tag
+            rake changes:current       Show changes between two latest version tags
+            rake changes:range <range> Show changes for a specific Git range (e.g., v1.0.0..v1.2.0)
+            rake changes:full [file]   Generate complete changelog from first tag
+            rake changes:add <file>    Append new entries to existing changelog file
+
+          Examples:
+            rake changes:pending
+            rake changes:current
+            rake changes:range v1.0.0..v1.2.0
+            rake changes:full
+            rake changes:full CHANGES.md
+            rake changes:add CHANGES.md
+      EOT
     end
   end
 
@@ -1598,6 +1702,7 @@ class GemHadar
   def create_all_tasks
     default_task
     config_task
+    changes_task
     build_task
     rvm_task
     version_task
@@ -1673,56 +1778,6 @@ class GemHadar
   # @return [ String ] the default Ollama AI model name, which is 'llama3.1'
   dsl_accessor :ollama_model_default, 'llama3.1'.freeze
 
-  # The ollama_model method retrieves the name of the Ollama AI model to be
-  # used for generating responses.
-  #
-  # It first checks the OLLAMA_MODEL environment variable for a custom model
-  # specification. If the environment variable is not set, it falls back to
-  # using the default model name, which is determined by the
-  # ollama_model_default dsl method.
-  #
-  # @return [ String ] the name of the Ollama AI model to be used
-  def ollama_model
-    ENV.fetch('OLLAMA_MODEL', ollama_model_default)
-  end
-
-  # The ollama_client method creates and returns an Ollama::Client instance
-  # configured with a base URL derived from environment variables.
-  #
-  # It first checks for the OLLAMA_URL environment variable to determine the
-  # base URL. If that is not set, it falls back to using the OLLAMA_HOST
-  # environment variable, defaulting to 'localhost:11434' if that is also not
-  # set. The method then constructs the full base URL and initializes an
-  # Ollama::Client with appropriate timeouts for read and connect operations.
-  #
-  # @return [Ollama::Client, nil] An initialized Ollama::Client instance if a
-  #   valid base URL is present, otherwise nil.
-  def ollama_client
-    base_url = ENV['OLLAMA_URL']
-    if base_url.blank?
-      host = ENV.fetch('OLLAMA_HOST', 'localhost:11434')
-      base_url = 'http://%s' % host
-    end
-    base_url.present? or return
-    Ollama::Client.new(base_url:, read_timeout: 600, connect_timeout: 60)
-  end
-
-  # Generates a response from an AI model using the Ollama::Client.
-  #
-  # @param [String] system The system prompt for the AI model.
-  # @param [String] prompt The user prompt to generate a response to.
-  # @return [String, nil] The generated response or nil if generation fails.
-  def ollama_generate(system:, prompt:)
-    unless ollama = ollama_client
-      warn "Ollama is not configured. => Returning."
-      return
-    end
-    model    = ollama_model
-    options  = ENV['OLLAMA_MODEL_OPTIONS'].full? { |o| JSON.parse(o) } || {}
-    options |= { "temperature" => 0, "top_p" => 1, "min_p" => 0.1 }
-    ollama.generate(model:, system:, prompt:, options:, stream: false, think: false).response
-  end
-
   # Increases the specified part of the version number and writes it back to
   # the VERSION  file.
   #
@@ -1744,7 +1799,7 @@ class GemHadar
   #   - The start version (e.g., '1.2.3') from which changes are compared.
   #   - The end version (e.g., '1.2.4' or 'HEAD') up to which changes are compared.
   def determine_version_range
-    version_tags = versions.map { version_tag(_1) } + %w[ HEAD ]
+    version_tags      = versions.map { version_tag(_1) } + %w[ HEAD ]
     found_version_tag = version_tags.index(version_tag(version))
     found_version_tag.nil? and fail "cannot find version tag #{version_tag(version)}"
     start_version, end_version = version_tags[found_version_tag, 2]
@@ -1758,6 +1813,25 @@ class GemHadar
       output.puts(ignore.sort)
     end
   end
+
+  # The version_tag_list method retrieves and processes semantic version tags
+  # from the Git repository.
+  #
+  # This method fetches all Git tags from the repository, filters them to
+  # include only those that match semantic versioning patterns (containing
+  # three numeric components separated by dots), removes any 'v' prefix from
+  # the tags, and sorts the resulting version specifications in ascending order
+  # according to semantic versioning rules.
+  #
+  # @return [ Array<GemHadar::VersionSpec> ] an array of VersionSpec objects
+  #   representing the semantic versions found in the repository, sorted in
+  #   ascending order
+  def version_tag_list
+    `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).
+      map { |tag| GemHadar::VersionSpec[tag.chomp] }.
+      sort_by(&:version)
+  end
+  memoize method: :version_tag_list, freeze: true
 
   # The write_gemfile method creates and writes the default Gemfile content if
   # it doesn't exist. If a custom Gemfile exists, it only displays a warning.
@@ -1812,7 +1886,7 @@ class GemHadar
   def gemspec
     Gem::Specification.new do |s|
       s.name        = name
-      s.version     = ::Gem::Version.new(version)
+      s.version     = ::Gem::Version.new(version_untag(version))
       s.author      = author
       s.email       = email
       s.homepage    = assert_valid_link(:homepage, homepage)
@@ -1873,29 +1947,6 @@ class GemHadar
     remotes
   end
 
-  # The ask? method prompts the user with a message and reads their input It
-  # returns a MatchData object if the input matches the provided pattern.
-  #
-  # @param prompt [ String ] the message to display to the user
-  # @param pattern [ Regexp ] the regular expression to match against the input
-  #
-  # @return [ MatchData, nil ] the result of the pattern match or nil if no match
-  def ask?(prompt, pattern, default: nil)
-    if prompt.include?('%{default}')
-      if default.present?
-        prompt = prompt % { default: ", default is #{default.inspect}" }
-      else
-        prompt = prompt % { default: '' }
-      end
-    end
-    STDOUT.print prompt
-    answer = STDIN.gets.chomp
-    default.present? && answer.blank? and answer = default
-    if answer =~ pattern
-      $~
-    end
-  end
-
   # The gem_files method returns an array of files that are included in the gem
   # package.
   #
@@ -1919,8 +1970,8 @@ class GemHadar
   # order according to semantic versioning rules.
   memoize method:
   def versions
-    `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).map(&:chomp).map {
-      _1.sub(/\Av/, '')
+    `git tag`.lines.grep(/^v?\d+\.\d+\.\d+$/).map(&:chomp).map { |tag|
+      GemHadar::VersionSpec[tag, without_prefix: true]
     }.sort_by(&:version)
   end
 
@@ -1930,11 +1981,7 @@ class GemHadar
   # @param version [String] the version string to modify
   # @return [String] the modified version string with a 'v' prefix
   def version_tag(version)
-    if version != 'HEAD'
-      version.dup.prepend ?v
-    else
-      version.dup
-    end
+    GemHadar::VersionSpec[version].tag
   end
 
   # The version_untag method removes the 'v' prefix from a version tag string.
@@ -1943,7 +1990,7 @@ class GemHadar
   #
   # @return [ String ] the version string with the 'v' prefix removed
   def version_untag(version_tag)
-    version.sub(/\Av/, '')
+    GemHadar::VersionSpec[version].untag
   end
 
   # The github_remote_url method retrieves and parses the GitHub remote URL
@@ -1995,36 +2042,52 @@ class GemHadar
     @github_workflows_variables || {}
   end
 
+  # The create_github_workflow_templates method compiles GitHub Actions
+  # workflow templates from ERB files into actual YAML workflow files in the
+  # project's .github/workflows directory
+  #
+  # This method iterates through the configured GitHub workflows, processes
+  # each ERB template file using the template compilation system, and generates
+  # the corresponding workflow files in the standard GitHub Actions directory
+  # structure
+  def create_github_workflow_templates
+    src_dir = Pathname.new(__dir__).join('gem_hadar', 'github_workflows')
+    dst_dir = Pathname.pwd.join('.github', 'workflows')
+    templates = Set[]
+    github_workflows.each do |workflow, variables|
+      @github_workflows_variables = variables
+      src = src_dir.join(workflow + '.erb')
+      unless src.exist?
+        warn "Workflow template #{src.to_s.inspect} doesn't exist! => Skipping."
+      end
+      mkdir_p dst_dir, verbose: false
+      dst = dst_dir.join(workflow)
+      templates << template(src, dst) {}
+    end
+    templates.to_a
+  end
+
   # The github_workflows_task method sets up Rake tasks for generating GitHub
   # Actions workflow files from ERB templates.
   #
-  # This method configures a hierarchical task structure under the :github namespace that:
-  # - Compiles configured workflow templates from ERB files into actual workflow YAML files
+  # This method configures a hierarchical task structure under the :github
+  # namespace that:
+  #
+  # - Compiles configured workflow templates from ERB files into actual
+  #   workflow YAML files
   # - Creates a :workflows task that depends on all compiled template files
   # - Sets up a :workflows:clean task to remove generated workflow files
-  # - Uses the github_workflows configuration to determine which workflows to generate
+  # - Uses the github_workflows configuration to determine which workflows to
+  #   generate
   # - Applies template variables to customize the generated workflows
   def github_workflows_task
     namespace :github do
-      templates = []
-      src_dir = Pathname.new(__dir__).join('gem_hadar', 'github_workflows')
-      dst_dir = Pathname.pwd.join('.github', 'workflows')
-      github_workflows.each do |workflow, variables|
-        @github_workflows_variables = variables
-        src = src_dir.join(workflow + '.erb')
-        puts "Compiling #{src.to_s.inspect} to #{dst_dir.to_s.inspect} now."
-        unless src.exist?
-          warn "Workflow template #{src.to_s.inspect} doesn't exist! => Skipping."
-        end
-        mkdir_p dst_dir
-        dst = dst_dir.join(workflow)
-        templates << (template(src, dst) {}).to_s
-      end
       desc "Create all configured github workflow tasks"
-      task :workflows => templates
+      task :workflows => create_github_workflow_templates
       namespace :workflows do
         desc "Delete all created github workflows"
         task :clean do
+          dst_dir = Pathname.pwd.join('.github', 'workflows')
           github_workflows.each_key do |workflow|
             rm_f dst_dir.join(workflow), verbose: true
           end

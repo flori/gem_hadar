@@ -146,10 +146,15 @@ class GemHadar
     # changelog file, retrieves all subsequent version tags from the Git
     # repository, and generates changelog entries for each consecutive pair of
     # versions. It then inserts these entries into the file after the existing
-    # content, maintaining the chronological order of changes.
+    # content, maintaining the
+    # chronological order of changes.
     #
-    # @param filename [ String ] the path to the changelog file to which
-    #   entries will be added
+    # @param filename [ String ] the path to the changelog file to which entries will be added
+    #
+    # @return [ Integer ] the count of changelog entries inserted into the file
+    # @return [ nil ] if no entries were added or if the file was empty
+    #
+    # @raise [ ArgumentError ] if the changelog file does not exist or if no highest version is found
     def add_to_file(filename)
       highest_version = find_highest_version(filename)
 
@@ -269,6 +274,7 @@ class GemHadar
         changelog << generate(range_from, range_to)
         +infobar
       end
+      infobar.newline
       changelog.reverse
     end
 
@@ -280,12 +286,10 @@ class GemHadar
     # the provided changelog entries immediately after the header
     # and before the next empty line.
     #
-    # @param filename [ String ] the path to the file into which changelog
-    #   entries will be injected
-    # @param changelog [ Array<String> ] an array of changelog entry strings to
-    #   be inserted into the file
+    # @param filename [ String ] the path to the file into which changelog entries will be injected
+    # @param changelog [ Array<String> ] an array of changelog entry strings to be inserted into the file
     #
-    # @see GemHadar::ChangelogGenerator#add_to_file
+    # @return [ Integer ] the count of changelog entries inserted into the file
     def inject_into_filename(filename, changelog)
       File.open(filename) do |input|
         File.secure_write(filename) do |output|
@@ -308,6 +312,7 @@ class GemHadar
           end
         end
       end
+      changelog.size
     end
 
     # The find_highest_version method extracts version specifications from

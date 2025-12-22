@@ -470,8 +470,11 @@ $ rake -T
 - `rake changes:current` - Show changes between two latest version tags
 - `rake changes:range` - Show changes for a specific Git range (e.g., v1.0.0..v1.2.0)
 - `rake changes:full` - Generate complete changelog from first tag
-- `rake changes:add` - Append to existing changelog file
+- `rake changes:add` - Append to changelog file
+- `rake changes:edit` - Edit changelog file
 - `rake changes:added` - Check if current version was added to changelog
+- `rake changes:commit` - Commit changes to changelog file
+- `rake changes:update` - Add and commit changes to changelog file
 
 ### Documentation
 

@@ -64,6 +64,7 @@ require 'gem_hadar/version_spec'
 require 'gem_hadar/prompt_template'
 require 'gem_hadar/changelog_generator'
 require 'gem_hadar/rvm_config'
+require 'gem_hadar/changelog_config'
 require 'gem_hadar/editor'
 
 class GemHadar
@@ -600,16 +601,27 @@ class GemHadar
     @rvm
   end
 
-  # The changelog_filename attribute accessor for configuring the gem's
-  # changelog file name.
+  # The changelog method configures or retrieves the changelog settings for the
+  # gem project.
   #
-  # This method sets up a DSL accessor for the changelog_filename attribute,
-  # which specifies the name of the changelog file to be used in the project.
-  # It provides a way to define a custom changelog filename that will be used
-  # during documentation generation and version management tasks.
+  # This method serves as an accessor for the changelog configuration, allowing
+  # the gem project to define settings related to changelog generation and
+  # management. When a block is provided, it initializes a new ChangelogConfig
+  # instance with the block's configuration. If no block is provided and no
+  # existing changelog configuration exists, it creates a new default
+  # ChangelogConfig instance.
   #
-  # @return [ String, nil ] the name of the changelog file or nil if disabled.
-  dsl_accessor :changelog_filename
+  # @param block [ Proc ] optional block to configure the changelog settings
+  #
+  # @return [ GemHadar::ChangelogConfig ] the changelog configuration instance
+  def changelog(&block)
+    if block
+      @changelog = ChangelogConfig.new(&block)
+    elsif !@changelog
+      @changelog = ChangelogConfig.new {}
+    end
+    @changelog
+  end
 
   # The default_task_dependencies method manages the list of dependencies for
   # the default Rake task.
@@ -1728,18 +1740,47 @@ class GemHadar
 
       desc 'Append new entries to existing changelog file'
       task :add do
-        filename = ARGV[1] || changelog_filename
-        filename or raise 'Need file to add to'
-        GemHadar::ChangelogGenerator.new(self).add_to_file(filename)
+        filename = ARGV[1] || changelog.filename
+        filename or next
+        if count = GemHadar::ChangelogGenerator.new(self).add_to_file(filename)
+          edit_file filename
+          puts "#{count} changes were added to #{filename.inspect}."
+        else
+          puts "No new changes added to #{filename.inspect}."
+        end
+      end
+
+      desc 'Edit the existing changelog file'
+      task :edit do
+        filename = ARGV[1] || changelog.filename
+        filename or raise 'Need changelog file to edit'
+        edit_file filename
       end
 
       desc 'Check if current version was added to the changelog'
       task :added do
-        changelog_filename or next
+        changelog.filename or next
         GemHadar::ChangelogGenerator.new(self).changelog_version_added?(version) and next
         abort "Version #{GemHadar::VersionSpec[version].untag} has not been "\
-          "documented in changelog #{changelog_filename.inspect} file."
+          "documented in changelog #{changelog.filename.inspect} file."
       end
+
+      desc 'Commit changes in changelog filename'
+      task :commit do
+        changelog.filename or next
+        `git status --porcelain #{changelog.filename.inspect}`.empty? and next
+        system "git add #{changelog.filename.inspect}"
+        msg = changelog.commit_message || "n/a"
+        system "git commit -m #{msg.inspect} #{changelog.filename.inspect}"
+        if $?.success?
+          puts "Successfully commited changes in changelog filename."
+        else
+          warn "Committing changes in changelog filename has failed!"
+        end
+      end
+
+      desc 'Update changelog file if necessary'
+      task :update => %i[ add commit ]
     end
 
     # Main changes task that shows help when called directly
@@ -1751,17 +1792,20 @@ class GemHadar
             rake changes:current       Show changes between two latest version tags
             rake changes:range <range> Show changes for a specific Git range (e.g., v1.0.0..v1.2.0)
             rake changes:full [file]   Generate complete changelog from first tag
-            rake changes:add <file>    Append new entries to existing changelog file
+            rake changes:add [file]    Append new entries to changelog file
             rake changes:added         Check if current version was added to changelog
+            rake changes:edit [file]   Edit changelog file
+            rake changes:commit        Commit changes in changelog if any
+            rake changes:update        Add and commit changes to changelog
 
           Examples:
-            rake changes:pending
-            rake changes:current
             rake changes:range v1.0.0..v1.2.0
-            rake changes:full
+            rake changes:full # or
             rake changes:full CHANGES.md
+            rake changes:add # or
             rake changes:add CHANGES.md
-            rake changes:added
+            rake changes:edit # or
+            rake changes:edit CHANGES.md
       EOT
     end
   end

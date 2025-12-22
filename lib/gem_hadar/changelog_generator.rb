@@ -217,7 +217,7 @@ class GemHadar
     #
     # @return [ Pathname ] the Pathname object representing the changelog file path
     def changelog_filename
-      Pathname.new(@gem_hadar.changelog_filename)
+      Pathname.new(@gem_hadar.changelog.filename)
     end
 
     # The ollama_generate method delegates AI generation requests to the

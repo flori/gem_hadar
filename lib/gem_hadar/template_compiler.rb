@@ -9,11 +9,23 @@ require 'erb'
 # context, and writing the resulting content to specified destination files.
 #
 # @example Compiling a template file
-#   compiler = GemHadar::TemplateCompiler.new do |t|
-#     t.name = 'my_template'
-#     t.version = '1.0.0'
+#   # Set up template compiler
+#   compiler = GemHadar::TemplateCompiler.new do
+#     name    'my_template'
+#     version '1.0.0'
 #   end
+#   # Template (template.erb): Contains ERB placeholders for name and version.
+#   #   Name: <%= name %>
+#   #   Version: <%= version %>
+#   #   Description: This is a template for <%= name %> v<%= version %>
+#
+#   # Compile the template.
 #   compiler.compile('template.erb', 'output.txt')
+#
+#   # Result (output.txt): The rendered output with interpolated values.
+#   #   Name: my_template
+#   #   Version: 1.0.0
+#   #   Description: This is a template for my_template v1.0.0
 class GemHadar::TemplateCompiler
   include Tins::BlockSelf
   include Tins::MethodMissingDelegator::DelegatorModule

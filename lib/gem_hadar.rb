@@ -1764,7 +1764,7 @@ class GemHadar
         v = GemHadar::VersionSpec[version].untag
         abort <<~EOT
           Version #{v} has not been documented in changelog #{changelog.filename.inspect} file.
-          Execute rake #{bold{'changes:update'}}. to do so.
+          Execute 'rake changes:update' to do so.
         EOT
       end
 

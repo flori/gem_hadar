@@ -1761,8 +1761,11 @@ class GemHadar
       task :added do
         changelog.filename or next
         GemHadar::ChangelogGenerator.new(self).changelog_version_added?(version) and next
-        abort "Version #{GemHadar::VersionSpec[version].untag} has not been "\
-          "documented in changelog #{changelog.filename.inspect} file."
+        v = GemHadar::VersionSpec[version].untag
+        abort <<~EOT
+          Version #{v} has not been documented in changelog #{changelog.filename.inspect} file.
+          Execute rake #{bold{'changes:update'}. to do so.
+        EOT
       end
 
       desc 'Commit changes in changelog filename'

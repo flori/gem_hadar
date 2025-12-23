@@ -34,7 +34,8 @@ module GemHadar::PromptTemplate
   # @return [ String ] the prompt template for GitHub release changelog generation
   def default_git_release_prompt
     <<~EOT
-      Output the content of a changelog for the new release of %{name} %{version}
+      Output the content of a changelog this new release, but never mention
+      the version of the release.
 
       **Strictly** follow these guidelines:
 

@@ -1981,7 +1981,7 @@ class GemHadar
       post_install_message.full? { |m| s.post_install_message = m }
 
       required_ruby_version.full? { |v| s.required_ruby_version = v }
-      s.add_development_dependency('gem_hadar', "~> #{VERSION[/\A\d+\.\d+/, 0]}")
+      s.add_development_dependency('gem_hadar', ">= #{VERSION}")
       for d in @development_dependencies
         s.add_development_dependency(*d)
       end

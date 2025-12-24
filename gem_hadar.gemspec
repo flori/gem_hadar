@@ -17,13 +17,13 @@ Gem::Specification.new do |s|
   s.homepage = "https://github.com/flori/gem_hadar".freeze
   s.licenses = ["MIT".freeze]
   s.rdoc_options = ["--title".freeze, "GemHadar - Library for the development of Ruby Gems".freeze, "--main".freeze, "README.md".freeze]
-  s.rubygems_version = "4.0.2".freeze
+  s.rubygems_version = "4.0.3".freeze
   s.summary = "Library for the development of Ruby Gems".freeze
   s.test_files = ["spec/gem_hadar_spec.rb".freeze, "spec/spec_helper.rb".freeze]
 
   s.specification_version = 4
 
-  s.add_development_dependency(%q<gem_hadar>.freeze, [">= 2.16.0".freeze])
+  s.add_development_dependency(%q<gem_hadar>.freeze, [">= 2.16.2".freeze])
   s.add_development_dependency(%q<all_images>.freeze, [">= 0".freeze])
   s.add_development_dependency(%q<rspec>.freeze, ["~> 3.13".freeze])
   s.add_development_dependency(%q<simplecov>.freeze, [">= 0".freeze])

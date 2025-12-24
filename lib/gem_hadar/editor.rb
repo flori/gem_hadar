@@ -27,13 +27,24 @@ module GemHadar::Editor
   #   the editor cannot be located
   # @return [ nil ] if the editor cannot be found in the file system
   def find_editor
-    editor = ENV.fetch('EDITOR', `which vi`.chomp)
-    unless File.exist?(editor)
+    if editor = ENV['EDITOR'].full?
+      unless File.exist?(editor)
+        if editor = `which #{editor}`.chomp.full?
+          File.exist?(editor) or editor = nil
+        end
+      end
+    end
+    editor ||= %w[ vim vi ].map {
+      path = `which #{_1}`.chomp.full? or next
+      path if File.exist?(path)
+    }.compact.first
+    unless editor && File.exist?(editor)
       warn "Can't find EDITOR. => Returning."
       return
     end
     editor
   end
+  memoize method: :find_editor
 
   # The edit_temp_file method opens a temporary file in an editor for user
   # modification.

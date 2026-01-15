@@ -1303,25 +1303,50 @@ class GemHadar
       path = "pkg/#{name_version}.gem"
       desc "Push gem file #{File.basename(path)} to rubygems"
       if developing
-        task :push => :build do
-          puts "Skipping push to rubygems while developing mode is enabled."
-        end
-      else
-        task :push => :build do
-          if File.exist?(path)
-            if ask?("Do you really want to push #{path.inspect} to rubygems? "\
-                "(yes/NO) ", /\Ayes\z/i)
-              then
-              key = ENV['GEM_HOST_API_KEY'].full? { |k| "--key #{k} " }
-              sh "gem push #{key}#{path}"
-            else
-              exit 1
-            end
-          else
-            abort "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
+        msg = "Skipping push to rubygems while developing mode is enabled."
+        namespace :force do
+          task :push do
+            puts msg
           end
         end
+        task :push => :build do
+          puts msg
+        end
+      else
+        namespace :force do
+          task :push do
+            version_tag_remote or abort 'No remote tag %s exists' % version
+            gem_push(path)
+          end
+        end
+        task :push => :build do
+          gem_push(path)
+        end
       end
+    end
+  end
+
+  # The gem_push method handles the process of uploading a gem package to
+  # RubyGems
+  #
+  # This method first checks if the specified gem file exists, then prompts the
+  # user for confirmation before proceeding with the push operation. It
+  # constructs the appropriate gem push command including an API key from the
+  # environment if available, and executes the command using the system shell
+  #
+  # @param path [ String ] the file path to the gem package to be pushed
+  def gem_push(path)
+    if File.exist?(path)
+      if ask?("Do you really want to push #{path.inspect} to rubygems? "\
+          "(yes/NO) ", /\Ayes\z/i)
+        then
+        key = ENV['GEM_HOST_API_KEY'].full? { |k| "--key #{k} " }
+        sh "gem push #{key}#{path}"
+      else
+        exit 1
+      end
+    else
+      abort "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
     end
   end
 

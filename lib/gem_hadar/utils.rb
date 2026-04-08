@@ -1,5 +1,3 @@
-require 'pathname'
-
 # A module that provides utility methods for GemHadar
 #
 # This module contains helper methods for common operations within the GemHadar

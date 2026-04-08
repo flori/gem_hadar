@@ -1,7 +1,6 @@
 require 'term/ansicolor'
 require 'tins/xt/secure_write'
 require 'fileutils'
-require 'pathname'
 
 class GemHadar
 end

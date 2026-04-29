@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.homepage = "https://github.com/flori/gem_hadar".freeze
   s.licenses = ["MIT".freeze]
   s.rdoc_options = ["--title".freeze, "GemHadar - Library for the development of Ruby Gems".freeze, "--main".freeze, "README.md".freeze]
-  s.rubygems_version = "4.0.10".freeze
+  s.rubygems_version = "4.0.6".freeze
   s.summary = "Library for the development of Ruby Gems".freeze
   s.test_files = ["spec/gem_hadar_spec.rb".freeze, "spec/spec_helper.rb".freeze]
 

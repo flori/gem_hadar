@@ -125,7 +125,8 @@ export GEM_HOST_API_KEY="your_api_key_here"
 **Security Note**: Never commit your API key to version control. Use a `.env`
 file or your shell's configuration with appropriate loading mechanisms.
 
-This key is required for tasks like `rake release` which push the gem package to RubyGems.org.
+This key is required for tasks like `rake release` which push the gem package
+to RubyGems.org.
 
 ### Github API
 
@@ -174,6 +175,12 @@ The model options example configures:
 
 This functionality is used by the `rake github:release` and `rake version:bump`
 task to generate AI-powered changelogs or suggest a version bump.
+
+**Human-in-the-Loop Review** ✍️: To ensure high quality and accuracy, `gem_hadar`
+does not blindly trust AI output. For tasks like `rake github:release` and
+`rake changes:add`, the tool will automatically open your configured `EDITOR`
+with the AI-generated content, allowing you to review and polish the text
+before it is committed or published.
 
 ### Custom AI Prompts
 
@@ -237,7 +244,7 @@ This task displays all current configuration values including:
 
 ### Pre-requisites
 
-Before using `gem_hadar`, ensure you have initialized a Git repository in your
+Before using `gem_hadar`, ensure you have initialized a Git repository in the
 project directory. Many of the gem's commands assume Git is available and
 properly configured in the current working directory.
 
@@ -249,7 +256,8 @@ Create a new directory and execute:
 $ gem_hadar
 ```
 
-This generates a basic gem structure with a Rakefile. Edit the generated Rakefile until:
+This generates a basic gem structure with a Rakefile. Edit the generated
+Rakefile until:
 
 ```bash
 $ rake gemspec
@@ -265,7 +273,8 @@ are performed as desired.
 
 ### YARD Documentation
 
-`gem_hadar` supports generating YARD documentation. To generate documentation, run:
+`gem_hadar` supports generating YARD documentation. To generate documentation,
+run:
 
 ```bash
 $ rake doc
@@ -316,7 +325,9 @@ Note that `gem_hadar` is ["self hosted"](Rakefile)
 - **`version`** - Required version with fallback to `VERSION` file or ENV override
 - **`authors`** - Required author names (mapped from `author`)
 - **`email`** - Required author email (raises error if not set)
-- **`homepage`** - Required homepage URL (raises error if not set). **Validation**: When `developing` is false, validates that the URL returns an HTTP OK status after following redirects.
+- **`homepage`** - Required homepage URL (raises error if not set).
+  **Validation**: When `developing` is false, validates that the URL returns an
+  HTTP OK status after following redirects.
 - **`summary`** - Required summary description (raises error if not set)
 - **`description`** - Required full description (raises error if not set)
 
@@ -377,16 +388,19 @@ end
 
 #### Configuration Flags
 
-- **`developing`** - Default: `false`. When set to `true`, skips URL validation including homepage link verification for faster development cycles.
+- **`developing`** - Default: `false`. When set to `true`, it skips URL
+  validation (including homepage link verification) and **acts as a safety
+  brake 🛑 by disabling actual `gem push` operations to RubyGems**, preventing
+  accidental publications during development.
 
 ### Paths and Module Types
 
 - **`path_name`** - Default: `name`. Returns the raw gem name value by default.
   It is used for generating file paths and module names. This is particularly
   useful for creating consistent directory structures and file naming
-  conventions. It's used internally by `GemHadar` to create the root directory
-  for the gem (`lib/my_gem` for name "my\_gem") and generate a `version.rb` file
-  in that location.
+  conventions. It's used internally by `GemHadar` to create the root
+  directory for the gem (`lib/my_gem` for name "my\_gem") and generate a
+  `version.rb` file in that location.
 
   This can be changed for nested namespaces if desired.
 
@@ -398,13 +412,13 @@ end
 - **`path_module`** - Default: `path_name.camelize`. Automatically converts the
   gem name to CamelCase format (e.g., "my\_gem" becomes "MyGem",
   "namespace/my\_gem" becomes "Namespace::MyGem") for use in Ruby module and
-  class declarations, ensuring consistency with Ruby naming
-  conventions. This value can be overridden if needed.
+  class declarations, ensuring consistency with Ruby naming conventions.
+  This value can be overridden if needed.
 
 - **`module_type`** - Default: `:module`. Determines whether the generated code
   structure for the version module should be a `:module` or `:class`. This
-  controls the type of Ruby construct created when generating code skeletons and
-  version files. The value
+  controls the type of Ruby construct created when generating code skeletons
+  and version files. The value
   can be set to either:
 
     - `:module` (default) - Generates module-based structure
@@ -424,9 +438,9 @@ end
     ```
 
 These computed values serve as intelligent defaults that can be overridden
-based on your specific requirements. They are automatically derived from other
-DSL accessors and provide powerful convenience features that enable `GemHadar`
-to generate consistent, well-structured Ruby code automatically.
+based on on their specific requirements. They are automatically derived from
+other DSL accessors and provide powerful convenience features that enable
+`GemHadar` to generate consistent, well-structured Ruby code automatically.
 
 ## Available Tasks
 
@@ -556,6 +570,9 @@ Use one of the following rake tasks to bump the version:
 - `rake version:bump` - Get AI-powered suggestion for appropriate bump level
 
 Or bump your [VERSION](./VERSION) file by hand.
+
+*💡 Note: The tool intelligently handles version strings, treating prefixed
+(`v1.2.3`) and non-prefixed (`1.2.3`) formats interchangeably.*
 
 ## Release
 

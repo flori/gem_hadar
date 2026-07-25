@@ -12,7 +12,7 @@ GemHadar do
   description    'This library contains some useful functionality to support the development of Ruby Gems'
   test_dir       'spec'
   ignore         '.*.sw[pon]', 'pkg', 'Gemfile.lock', '.AppleDouble',
-    '.bundle', '.yardoc', 'doc', 'tags', 'cscope.out'
+    '.bundle', '.yardoc', 'doc', 'tags', 'cscope.out', 'coverage'
   package_ignore '.gitignore', 'VERSION'
   readme         'README.md'
 
@@ -22,7 +22,7 @@ GemHadar do
     'static.yml' => { branches: '[ "master" ]' }
   )
 
-  dependency 'tins',           '~> 1.0'
+  dependency 'tins',           '~> 1.56'
   dependency 'term-ansicolor', '~> 1.0'
   dependency 'ollama-ruby',    '~> 1.17'
   dependency 'infobar',        '~> 0.11'

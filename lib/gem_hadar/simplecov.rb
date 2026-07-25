@@ -162,7 +162,11 @@ module GemHadar::SimpleCov
       filter = "#{File.basename(File.dirname(caller.first))}/"
       -> {
         enable_coverage :branch
-        add_filter filter
+        if respond_to?(:skip)
+          skip filter
+        else
+          add_filter filter
+        end
         formatter SimpleCov::Formatter::MultiFormatter.new([
           SimpleCov::Formatter::SimpleFormatter,
           SimpleCov::Formatter::HTMLFormatter,

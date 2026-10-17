@@ -2176,8 +2176,9 @@ class GemHadar
   # - Applies template variables to customize the generated workflows
   def github_workflows_task
     namespace :github do
+      github_workflow_templates = create_github_workflow_templates
       desc "Create all configured github workflow tasks"
-      task :workflows => create_github_workflow_templates
+      task :workflows => github_workflow_templates
       namespace :workflows do
         desc "Delete all created github workflows"
         task :clean do

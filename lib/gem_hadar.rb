@@ -878,7 +878,7 @@ class GemHadar
           fail "Could not find #{from_version.inspect}."
         end
       end
-      `git log -p #{from_version.tag}..HEAD`
+      `git log --color=never -p #{from_version.tag}..HEAD`
     else
       unless versions.find { |v| v == to_version }
         fail "Could not find #{to_version.inspect}."
@@ -890,14 +890,14 @@ class GemHadar
           end
         end
         unless from_version
-          return `git log -p #{to_version.tag}`
+          return `git log --color=never -p #{to_version.tag}`
         end
       else
         unless versions.find { |v| v == from_version }
           fail "Could not find #{from_version.inspect}."
         end
       end
-      `git log -p #{from_version.tag}..#{to_version.tag}`
+      `git log --color=never -p #{from_version.tag}..#{to_version.tag}`
     end
   end
 
@@ -1383,8 +1383,16 @@ class GemHadar
   # @return [ String ] the generated changelog content for the release body
   def create_git_release_body
     log_diff = version_log_diff(to_version: version)
-    system   = xdg_config('gem_hadar', 'release_system_prompt.txt', default_git_release_system_prompt)
-    prompt   = xdg_config('gem_hadar', 'release_prompt.txt', default_git_release_prompt) % { name:, version:, log_diff: }
+    system   = xdg_config(
+      'gem_hadar',
+      'release_system_prompt.txt',
+      default_git_release_system_prompt
+    )
+    prompt   = xdg_config(
+      'gem_hadar', 'release_prompt.txt', default_git_release_prompt
+    ) % {
+      name:, version:, log_diff:
+    }
     ollama_generate(system:, prompt:)
   end
 

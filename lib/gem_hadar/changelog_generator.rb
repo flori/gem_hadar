@@ -52,10 +52,10 @@ class GemHadar
 
       range = "#{from.tag}..#{to.tag}"
 
-      log = `git log #{range}`
+      log = `git log --color=never -p #{range}`
       $?.success? or raise "Failed to get git log for range #{range}"
 
-      date = `git log -n1 --pretty='format:%cd' --date=short #{to.tag.inspect}`.chomp
+      date = `git log --color=never -n1 --pretty='format:%cd' --date=short #{to.tag.inspect}`.chomp
 
       if log.strip.empty?
         return "\n## #{date} #{to.without_prefix.to_s}\n"
@@ -129,7 +129,7 @@ class GemHadar
       end
 
       first_version = versions.first
-      date          = `git log -n1 --pretty='format:%cd' --date=short #{first_version.tag.to_s}`.chomp
+      date          = `git log --color=never -n1 --pretty='format:%cd' --date=short #{first_version.tag.to_s}`.chomp
       changelog     = ["\n## #{date} #{first_version.tag.to_s}\n\n* Start\n"]
 
       changelog = generate_changelog(versions, changelog:)
@@ -269,7 +269,7 @@ class GemHadar
     #   chronological order
     def generate_changelog(versions, changelog: [])
       versions = versions.each_cons(2).
-        with_infobar(total: versions.size - 1, label: 'Change')
+        with_infobar(total: versions.size - 1, label: 'Change', show: STDOUT.tty?)
       versions.each do |range_from, range_to|
         changelog << generate(range_from, range_to)
         +infobar

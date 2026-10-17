@@ -34,25 +34,62 @@ module GemHadar::PromptTemplate
   # @return [ String ] the prompt template for GitHub release changelog generation
   def default_git_release_prompt
     <<~EOT
-      Output the content of a changelog this new release, but never mention
-      the version of the release.
-
-      **Strictly** follow these guidelines:
-
-        - Use bullet points in markdown format (`-`) to list significant changes.
-        - Exclude trivial updates such as:
-          * Version number increments
-          * Dependency version bumps (unless they resolve critical issues)
-          * Minor code style adjustments
-          * Internal documentation tweaks
-        - Include only verified and substantial changes that impact
-          functionality, performance, or user experience.
-        - If unsure about a change's significance, omit it from the output.
-        - Avoid adding any comments or notes; keep the output purely factual.
-
-      These are the log messages including patches for the new release:
+      Generate the release body for a new release from the following Git log
+      (commit messages and unified diffs):
 
       %{log_diff}
+
+      **Input:**
+      - Commit messages describe the author's intent.
+      - Patches show the actual code changes and are the source of truth.
+      - If a commit message is vague or misleading, trust the patch.
+
+      **Rules:**
+      1. Categorize each change into one of the sections below.
+      2. **Omit any section that has zero entries. Do NOT output an
+         empty header with no bullet points beneath it.**
+      3. Never mention the version number of the release.
+      4. Include only significant changes that impact functionality,
+         performance, or user experience.
+      5. Exclude trivial updates:
+         - Version number increments
+         - Dependency version bumps (unless they resolve critical issues)
+         - Minor code style adjustments
+         - Internal documentation tweaks
+      6. Wrap variable, method, function, and constant names in backticks.
+      7. Wrap version numbers in **bold**.
+      8. Do NOT reference individual commits by SHA-1 hash.
+      9. Do NOT add chatty remarks, notes, introductions, or closing lines.
+      10. If unsure about a change's significance, omit it.
+
+      **Output format:**
+      - Use the section headers below. Omit empty sections entirely.
+
+      ### Breaking
+      API changes, removed features, or compatibility changes
+      that require user action.
+      - …
+
+      ### Features
+      New user-facing APIs, options, or capabilities.
+      - …
+
+      ### Fixes
+      - …
+
+      ### Improvements
+      - …
+
+      ### Build & CI
+      CI pipeline, Dockerfile, dependency, gemspec metadata,
+      test infrastructure, and tooling changes.
+      - …
+
+      ### Testing
+      - …
+
+      ### Documentation
+      - …
     EOT
   end
 
@@ -69,10 +106,10 @@ module GemHadar::PromptTemplate
   def default_version_bump_system_prompt
     <<~EOT
       You are an expert at semantic versioning. Analyze the provided changes
-      and suggest whether to bump major, minor, or build version according to
-      Semantic Versioning. Provide a brief explanation of your reasoning,
-      followed by a single line containing only one word: 'major', 'minor', or
-      'build'.
+      and suggest whether to bump major, minor, or build (=patch) version
+      according to Semantic Versioning. Provide a brief explanation of your
+      reasoning, followed by a single line containing only one word: 'major',
+      'minor', or 'build'.
     EOT
   end
 
@@ -109,8 +146,9 @@ module GemHadar::PromptTemplate
   # @return [ String ] the system prompt for changelog generation
   def default_changelog_system_prompt
     <<~EOT
-      You are a Ruby programmer generating a change log entry in markdown syntax,
-      summarizing the code changes for a new version in a professional way.
+      You are a Ruby programmer generating a changelog entry in markdown.
+      Summarize code changes for a new version in a professional, factual
+      tone. You are not a chatbot.
     EOT
   end
 
@@ -124,23 +162,57 @@ module GemHadar::PromptTemplate
   # while focusing on significant functional changes.
   def default_changelog_prompt
     <<~EOT
-      Generate a changelog entry for the following Git commit history:
+      Generate a changelog entry from the following Git log
+      (commit messages and unified diffs):
 
       %{log_diff}
 
-    - Summarize the changes in the following git log messages as bullet points.
-    - Don't mention the version of the change set
-    - Skip bullet points about version bumps.
-    - List significant changes as bullet points using markdown when applicable.
-    - Mark all names and values for variables, methods, functions, and
-      constants, you see in the messages  as markdown code surrounded by
-      backtick characters.
-    - Mark all version numbers you see in the messages as markdown bold
-     surrounded by two asterisk characters.
-    - Don't refer to single commits by sha1 hash.
-    - Don't add information about changes you are not sure about.
-    - Don't output any additional chatty remarks, notes, introductions,
-      communications, etc.
+      **Input:**
+      - Commit messages describe the author's intent.
+      - Patches show the actual code changes and are the source of truth.
+      - If a commit message is vague or misleading, trust the patch.
+
+      **Rules:**
+      1. Categorize each change into one of the sections below.
+      2. **Omit any section that has zero entries. Do NOT output an
+         empty header with no bullet points beneath it.**
+      3. Do NOT mention the version number of the change set.
+      4. Skip entries that are purely version bumps.
+      5. Wrap variable, method, function, and constant names found in
+         messages or patches in backticks.
+      6. Wrap version numbers found in messages in **bold**.
+      7. Do NOT reference individual commits by SHA-1 hash.
+      8. Do NOT add information you are not certain about.
+      9. Do NOT include chatty remarks, introductions, or closing notes.
+
+      **Output format:**
+      - Use the section headers below. Omit empty sections entirely.
+
+      ### Breaking
+      API changes, removed features, or compatibility changes
+      that require user action.
+      - …
+
+      ### Features
+      New user-facing APIs, options, or capabilities.
+      - …
+
+      ### Fixes
+      - …
+
+      ### Improvements
+      - …
+
+      ### Build & CI
+      CI pipeline, Dockerfile, dependency, gemspec metadata,
+      test infrastructure, and tooling changes.
+      - …
+
+      ### Testing
+      - …
+
+      ### Documentation
+      - …
     EOT
   end
 end

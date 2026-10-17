@@ -221,6 +221,32 @@ class GemHadar
     has_to_be_set :homepage
   end
 
+  # The metadatas attribute accessor for configuring the gem's metadata hash.
+  #
+  # This method sets up a DSL accessor for the metadatas attribute, which
+  # specifies the additional metadata key-value pairs to include in the gem
+  # specification. It defaults to an empty hash and provides a way to define
+  # RubyGems metadata such as source_code_uri, bug_tracker_uri, or
+  # documentation_uri. Typically populated via the metadata method.
+  #
+  # @return [ Hash{String => String} ] the metadata hash for the gem
+  dsl_accessor :metadatas do
+    {}
+  end
+
+  # The metadata method adds a single metadata key-value pair to the gem.
+  #
+  # The key is stringified on entry to satisfy RubyGems' requirement that all
+  # metadata keys be Strings. This mirrors the dependency / development_
+  # dependency pattern for one-entry-at-a-time registration.
+  #
+  # @param key [ String, Symbol ] the metadata key (e.g. 'source_code_uri')
+  # @param value [ String ] the metadata value (e.g. a URL)
+  def metadata(key, value)
+    key        = key.to_s
+    metadatas |= { key => value }
+  end
+
   # The summary attribute accessor for configuring the gem's summary.
   #
   # This method sets up a DSL accessor for the summary attribute, which
@@ -2013,6 +2039,7 @@ class GemHadar
       s.summary     = summary
       s.description = description
 
+      metadatas.full? { |mds| s.metadata |= mds }
       gem_files.full? { |f| s.files = Array(f) }
       test_files.full? { |t| s.test_files = Array(t) }
       extensions.full? { |e| s.extensions = Array(e) }

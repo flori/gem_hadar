@@ -243,8 +243,8 @@ class GemHadar
   # @param key [ String, Symbol ] the metadata key (e.g. 'source_code_uri')
   # @param value [ String ] the metadata value (e.g. a URL)
   def metadata(key, value)
-    key        = key.to_s
-    metadatas |= { key => value }
+    key = key.to_s
+    metadatas.update({ key => value })
   end
 
   # The summary attribute accessor for configuring the gem's summary.

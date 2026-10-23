@@ -17,7 +17,7 @@ module GemHadar::OllamaSupport
   #
   # @return [ Ollama::Client ] a configured Ollama client instance ready for use
   def ollama
-    base_url      = ENV['OLLAMA_URL'] || "http://%s" % ENV.fetch('OLLAMA_HOST', 'localhost:11434')
+    base_url      = Ollama.base_url(ENV['OLLAMA_URL'] || ENV.fetch('OLLAMA_HOST', 'localhost:11434'))
     client_config = {
       base_url:        base_url,
       read_timeout:    600,

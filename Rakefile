@@ -24,7 +24,7 @@ GemHadar do
 
   dependency 'tins',           '~> 1.56'
   dependency 'term-ansicolor', '~> 1.0'
-  dependency 'ollama-ruby',    '~> 1.17'
+  dependency 'ollama-ruby',    '~> 1.26'
   dependency 'infobar',        '~> 0.11'
   dependency 'mize'
   dependency 'rake'

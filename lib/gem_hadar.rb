@@ -1997,7 +1997,7 @@ class GemHadar
     end
     current = File.read('Gemfile')
     if current.start_with?(modeline)
-      secure_write('Gemfile') { |f| f.write current.sub(modeline, '', 1) }
+      secure_write('Gemfile') { |f| f.write current.sub(modeline, '') }
       puts "Removed obsolete vim modeline from Gemfile."
     elsif current != default_gemfile
       warn "INFO: Current Gemfile differs from default Gemfile."

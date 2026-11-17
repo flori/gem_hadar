@@ -1980,24 +1980,26 @@ class GemHadar
   memoize method: :version_tag_list, freeze: true
 
   # The write_gemfile method creates and writes the default Gemfile content if
-  # it doesn't exist. If a custom Gemfile exists, it only displays a warning.
+  # it doesn't exist. If a Gemfile exists with the obsolete vim modeline that
+  # GemHadar previously generated, it strips those two lines automatically.
+  # If a custom Gemfile exists that differs from the default, it displays a
+  # warning.
   def write_gemfile
     default_gemfile =<<~EOT
-      # vim: set filetype=ruby et sw=2 ts=2:
-
       source 'https://rubygems.org'
 
       gemspec
     EOT
-    current_gemfile = File.exist?('Gemfile') && File.read('Gemfile')
-    case current_gemfile
-    when false
-      secure_write('Gemfile') do |output|
-        output.write default_gemfile
-      end
-    when default_gemfile
-      ;;
-    else
+    modeline = "# vim: set filetype=ruby et sw=2 ts=2:\n\n"
+    unless File.exist?('Gemfile')
+      secure_write('Gemfile') { |f| f.write default_gemfile }
+      return
+    end
+    current = File.read('Gemfile')
+    if current.start_with?(modeline)
+      secure_write('Gemfile') { |f| f.write current.sub(modeline, '', 1) }
+      puts "Removed obsolete vim modeline from Gemfile."
+    elsif current != default_gemfile
       warn "INFO: Current Gemfile differs from default Gemfile."
     end
   end

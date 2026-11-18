@@ -31,7 +31,7 @@ GemHadar do
   dependency 'yard'
   dependency 'openssl',        '>= 3.3.1'
   dependency 'net-http'
-  dependency 'json',           '~> 2.0'
+  dependency 'json',           '>= 2.0'
   dependency 'uri'
   dependency 'fileutils'
   dependency 'erb'

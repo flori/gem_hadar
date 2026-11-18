@@ -1990,7 +1990,7 @@ class GemHadar
     modeline = "# vim: set filetype=ruby et sw=2 ts=2:\n\n"
     content  = File.read(filename)
     if content.start_with?(modeline)
-      secure_write(filename) { |f| f.write content.sub(modeline, '', 1) }
+      secure_write(filename) { |f| f.write content.sub(modeline, '') }
       puts "Removed obsolete vim modeline from #{filename}."
     end
   end

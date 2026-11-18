@@ -26,8 +26,6 @@ class GemHadar::Setup
     unless File.exist?('Rakefile')
       File.open('Rakefile', 'w') do |output|
         output.puts <<~EOT
-            # vim: set filetype=ruby et sw=2 ts=2:
-
             require 'gem_hadar'
 
             GemHadar do

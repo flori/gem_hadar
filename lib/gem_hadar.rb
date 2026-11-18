@@ -1455,7 +1455,7 @@ class GemHadar
           if body.present?
             begin
               response = rc.perform(tag_name:, target_commitish:, body:)
-              puts "Release created successfully! See #{response.html_url}"
+              puts "Release created successfully! See #{response['html_url']}"
             rescue => e
               warn e.message
             end

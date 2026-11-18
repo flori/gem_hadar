@@ -68,7 +68,7 @@ class GemHadar::GitHub::ReleaseCreator
   # @param draft [ Boolean ] whether to create a draft release (defaults to false)
   # @param prerelease [ Boolean ] whether to mark the release as a pre-release (defaults to false)
   #
-  # @return [ JSON::GenericObject ] the parsed response data from the GitHub API containing
+  # @return [ Hash ] the parsed response data from the GitHub API containing
   #   details about the created release
   #
   # @raise [ RuntimeError ] if the GitHub API request fails with a non-success status code
@@ -96,7 +96,7 @@ class GemHadar::GitHub::ReleaseCreator
     response = Net::HTTP.post(uri, JSON(data), headers)
     case response
     when Net::HTTPSuccess
-      JSON.parse(response.body, object_class: JSON::GenericObject)
+      JSON.parse(response.body)
     else
       error_data =
         begin

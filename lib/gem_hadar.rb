@@ -1907,6 +1907,8 @@ class GemHadar
     release_task
     github_workflows_task
     write_ignore_file
+    strip_modeline 'Gemfile'
+    strip_modeline 'Rakefile'
     write_gemfile
     if extensions.full?
       compile_task
@@ -1979,27 +1981,34 @@ class GemHadar
   end
   memoize method: :version_tag_list, freeze: true
 
+  # The strip_modeline method removes the obsolete vim modeline that GemHadar
+  # previously generated at the top of project files.
+  #
+  # @param filename [ String ] the file to check and potentially strip
+  def strip_modeline(filename)
+    return unless File.exist?(filename)
+    modeline = "# vim: set filetype=ruby et sw=2 ts=2:\n\n"
+    content  = File.read(filename)
+    if content.start_with?(modeline)
+      secure_write(filename) { |f| f.write content.sub(modeline, '', 1) }
+      puts "Removed obsolete vim modeline from #{filename}."
+    end
+  end
+
   # The write_gemfile method creates and writes the default Gemfile content if
-  # it doesn't exist. If a Gemfile exists with the obsolete vim modeline that
-  # GemHadar previously generated, it strips those two lines automatically.
-  # If a custom Gemfile exists that differs from the default, it displays a
-  # warning.
+  # it doesn't exist. If a custom Gemfile exists that differs from the
+  # default, it displays a warning.
   def write_gemfile
-    default_gemfile =<<~EOT
+    default_gemfile = <<~EOT
       source 'https://rubygems.org'
 
       gemspec
     EOT
-    modeline = "# vim: set filetype=ruby et sw=2 ts=2:\n\n"
     unless File.exist?('Gemfile')
       secure_write('Gemfile') { |f| f.write default_gemfile }
       return
     end
-    current = File.read('Gemfile')
-    if current.start_with?(modeline)
-      secure_write('Gemfile') { |f| f.write current.sub(modeline, '') }
-      puts "Removed obsolete vim modeline from Gemfile."
-    elsif current != default_gemfile
+    if File.read('Gemfile') != default_gemfile
       warn "INFO: Current Gemfile differs from default Gemfile."
     end
   end

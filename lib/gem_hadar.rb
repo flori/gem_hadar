@@ -1370,23 +1370,31 @@ class GemHadar
   #
   # @param path [ String ] the file path to the gem package to be pushed
   def gem_push(path)
+    delete_tags = false
     if File.exist?(path)
       if ask?("Do you really want to push #{path.inspect} to rubygems? "\
           "(yes/NO) ", /\Ayes\z/i)
         then
         key = ENV['GEM_HOST_API_KEY'].full? { |k| "--key #{k} " }
-        sh "gem push #{key}#{path}"
-      else
-        if @version_tag_pushed&.any?
-          tag = GemHadar::VersionSpec[version].tag
-          if ask?("Delete #{tag} from #{@version_tag_pushed.to_a.join(', ')}? (y/N) ", /\Ay/i)
-            @version_tag_pushed.each { |gr| sh "git push #{gr} --delete #{tag}" }
-          end
+        begin
+          sh "gem push #{key}#{path}"
+        rescue RuntimeError
+          delete_tags = true
         end
+      else
+        delete_tags = true
         exit 1
       end
     else
+      delete_tags = true
       abort "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
+    end
+  ensure
+    if delete_tags && @version_tag_pushed&.any?
+      tag = GemHadar::VersionSpec[version].tag
+      if ask?("Delete #{tag} from #{@version_tag_pushed.to_a.join(', ')}? (y/N) ", /\Ay/i)
+        @version_tag_pushed.each { |gr| sh "git push #{gr} --delete #{tag}" }
+      end
     end
   end
 

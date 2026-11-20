@@ -1370,7 +1370,7 @@ class GemHadar
   #
   # @param path [ String ] the file path to the gem package to be pushed
   def gem_push(path)
-    delete_tags = false
+    @push_cancelled = false
     if File.exist?(path)
       if ask?("Do you really want to push #{path.inspect} to rubygems? "\
           "(yes/NO) ", /\Ayes\z/i)
@@ -1379,18 +1379,18 @@ class GemHadar
         begin
           sh "gem push #{key}#{path}"
         rescue RuntimeError
-          delete_tags = true
+          @push_cancelled = true
         end
       else
-        delete_tags = true
+        @push_cancelled = true
         exit 1
       end
     else
-      delete_tags = true
+      @push_cancelled = true
       abort "Cannot push gem to rubygems: #{path.inspect} doesn't exist."
     end
   ensure
-    if delete_tags && @version_tag_pushed&.any?
+    if @push_cancelled && @version_tag_pushed&.any?
       tag = GemHadar::VersionSpec[version].tag
       if ask?("Delete #{tag} from #{@version_tag_pushed.to_a.join(', ')}? (y/N) ", /\Ay/i)
         @version_tag_pushed.each { |gr| sh "git push #{gr} --delete #{tag}" }
@@ -1456,6 +1456,7 @@ class GemHadar
       end
       desc "Create a new GitHub release for the current version with a AI-generated changelog"
       task :release do
+        @push_cancelled and next
         yes = ask?(
           "Do you want to publish a release message on github? (y/n%{default}) ",
           /\Ay/i, default: ENV['GITHUB_RELEASE_ENABLED']

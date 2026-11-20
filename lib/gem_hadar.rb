@@ -2022,8 +2022,10 @@ class GemHadar
   #
   # @return [String] the original URL if validation succeeds
   #
-  # @raise [ArgumentError] if the final response is not an HTTP OK status after
+  # @raise [RuntimeError] if the final response is not an HTTP OK status after
   # following redirects
+  # @raise [RuntimeError] if the URL cannot be reached (DNS failure, timeout),
+  # including a hint to add `developing true`
   def assert_valid_link(name, orig_url)
     developing and return orig_url
     url = orig_url
@@ -2034,6 +2036,11 @@ class GemHadar
     response.is_a?(Net::HTTPOK) or
       fail "#{orig_url.inspect} for #{name} has to be a valid link"
     orig_url
+  rescue SocketError, Net::OpenTimeout => e
+    fail <<~EOT
+      Cannot verify #{orig_url.inspect} for #{name}: #{e.message}
+      Check the URL, or add `developing true` to skip link validation.
+    EOT
   end
 
   # The gemspec method creates and returns a new Gem::Specification object

@@ -1278,7 +1278,10 @@ class GemHadar
         namespace gr.to_sym do
           desc "Push version #{version} to git remote #{gr}"
           task :push do
+            tag     = GemHadar::VersionSpec[version].tag
+            already = !`git ls-remote --tags #{gr} #{tag}`.strip.empty?
             sh "git push #{gr} v#{version}"
+            (@version_tag_pushed ||= Set[]) << gr unless already
           end
         end
       end
@@ -1374,6 +1377,12 @@ class GemHadar
         key = ENV['GEM_HOST_API_KEY'].full? { |k| "--key #{k} " }
         sh "gem push #{key}#{path}"
       else
+        if @version_tag_pushed&.any?
+          tag = GemHadar::VersionSpec[version].tag
+          if ask?("Delete #{tag} from #{@version_tag_pushed.to_a.join(', ')}? (y/N) ", /\Ay/i)
+            @version_tag_pushed.each { |gr| sh "git push #{gr} --delete #{tag}" }
+          end
+        end
         exit 1
       end
     else

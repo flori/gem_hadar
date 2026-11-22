@@ -2289,9 +2289,13 @@ class GemHadar
           diff = `diff -u --color=always #{dst.to_path} #{new.path}`
           puts diff unless diff.strip.empty?
         end
-        if ask?("Update #{dst}? (y/N) ", /\Ay/i)
-          secure_write(dst) { |f| f.write rendered }
-          puts "Updated #{dst}."
+        if STDIN.tty?
+          if ask?("Update #{dst}? (y/N) ", /\Ay/i)
+            secure_write(dst) { |f| f.write rendered }
+            puts "Updated #{dst}."
+          end
+        else
+          warn "Workflow #{dst} differs from template. Run interactively to update."
         end
       end
     end

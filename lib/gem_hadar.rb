@@ -1924,6 +1924,7 @@ class GemHadar
     push_task
     release_task
     github_workflows_task
+    check_workflow_drift
     write_ignore_file
     strip_modeline 'Gemfile'
     strip_modeline 'Rakefile'
@@ -2257,6 +2258,33 @@ class GemHadar
           github_workflows.each_key do |workflow|
             rm_f dst_dir.join(workflow), verbose: true
           end
+        end
+      end
+    end
+  end
+
+  # The check_workflow_drift method compares rendered workflow templates
+  # against the files on disk and offers to update them if they differ.
+  #
+  # This runs on every rake invocation (like write_gemfile / strip_modeline)
+  # so that template changes shipped in a new gem_hadar release are surfaced
+  # to the user without silently overwriting local edits.
+  def check_workflow_drift
+    return unless github_workflows.any?
+    src_dir = Pathname.new(__dir__).join('gem_hadar', 'github_workflows')
+    dst_dir = Pathname.pwd.join('.github', 'workflows')
+    github_workflows.each do |workflow, variables|
+      src = src_dir.join(workflow + '.erb')
+      dst = dst_dir.join(workflow)
+      next unless src.exist? && dst.exist?
+      @github_workflows_variables = variables
+      erb = ERB.new(File.read(src), trim_mode: ?-)
+      erb.filename = src.to_s
+      rendered = erb.result(binding)
+      if rendered != File.read(dst)
+        if ask?("Workflow #{dst} differs from template. Update? (y/N) ", /\Ay/i)
+          secure_write(dst) { |f| f.write rendered }
+          puts "Updated #{dst}."
         end
       end
     end

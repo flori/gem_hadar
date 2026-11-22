@@ -13,6 +13,7 @@ require 'rake/clean'
 require 'rake/testtask'
 require 'set'
 require 'pathname'
+require 'tempfile'
 require 'term/ansicolor'
 require_maybe 'yard'
 require_maybe 'simplecov'
@@ -2281,8 +2282,14 @@ class GemHadar
       erb = ERB.new(File.read(src), trim_mode: ?-)
       erb.filename = src.to_s
       rendered = erb.result(binding)
-      if rendered != File.read(dst)
-        if ask?("Workflow #{dst} differs from template. Update? (y/N) ", /\Ay/i)
+      if rendered != dst.read
+        Tempfile.create(%w[wf_cur wf_new]) do |new|
+          new.write rendered
+          new.flush
+          diff = `diff -u --color=always #{dst.to_path} #{new.path}`
+          puts diff unless diff.strip.empty?
+        end
+        if ask?("Update #{dst}? (y/N) ", /\Ay/i)
           secure_write(dst) { |f| f.write rendered }
           puts "Updated #{dst}."
         end

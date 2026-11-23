@@ -2164,22 +2164,25 @@ class GemHadar
   # from the local Git configuration.
   #
   # It executes `git remote -v` to get all remote configurations, extracts the
-  # push URLs, processes them to construct valid URIs, and returns the first
-  # URI pointing to GitHub.com.
+  # push URLs, and processes them to construct valid URIs. The remote named by
+  # GIT_REMOTE (default: "origin") is preferred; if that remote is not on
+  # GitHub.com, it falls back to scanning all remotes.
   #
   # @return [URI, nil] The parsed GitHub remote URI or nil if not found.
   def github_remote_url
-    if remotes = `git remote -v`
-      remotes_urls = remotes.scan(/^(\S+)\s+(\S+)\s+\(push\)/)
-      remotes_uris = remotes_urls.map do |name, url|
-        if %r(\A(?<scheme>[^@]+)@(?<hostname>[A-Za-z0-9.]+):(?:\d*)(?<path>.*)) =~ url
-          path = ?/ + path unless path.start_with? ?/
-          url = 'ssh://%s@%s%s' % [ scheme, hostname, path ] # approximate correct URIs
-        end
-        URI.parse(url)
+    remotes = `git remote -v`
+    return if remotes.empty?
+    remotes_urls = remotes.scan(/^(\S+)\s+(\S+)\s+\(push\)/)
+    remotes_uris = remotes_urls.map do |name, url|
+      if %r(\A(?<scheme>[^@]+)@(?<hostname>[A-Za-z0-9.]+):(?:\d*)(?<path>.*)) =~ url
+        path = ?/ + path unless path.start_with? ?/
+        url = 'ssh://%s@%s%s' % [ scheme, hostname, path ]
       end
-      remotes_uris.find { |uri| uri.hostname == 'github.com' }
+      [name, URI.parse(url)]
     end
+    preferred = remotes_uris.find { |n, _| n == git_remote }
+    return preferred&.last if preferred&.last&.hostname == 'github.com'
+    remotes_uris.map(&:last).find { |uri| uri.hostname == 'github.com' }
   end
 
   # The github_workflows attribute accessor for configuring GitHub Actions
